@@ -1,31 +1,38 @@
+﻿"""
+Finpluse v2 -- Federated Learning API
 """
-Finpluse v2 -- Federated Learning API (Server Side)
-"""
-from typing import Any
-from fastapi import APIRouter
+from typing import Any, Dict
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.api.deps import get_current_user
+from app.db.models.user import User
 from app.ml.federated.fl_server import FLServer
 
 router = APIRouter()
-fl_server = FLServer(global_model_dim=20)
+fl_server = FLServer(global_model_dim=5)
+fl_server.min_clients = 2
 
-
-@router.get("/global_model")
-async def get_global_model() -> dict[str, Any]:
-    """Distribute global weights to clients."""
-    return {
-        "round": fl_server.round,
-        "weights": fl_server.get_global_model()
-    }
-
-
-@router.post("/submit_update")
-async def submit_update(client_id: str, weights: list[float], n_samples: int) -> dict[str, Any]:
-    """Receive local model updates from clients."""
-    success = fl_server.submit_update(client_id, weights, n_samples)
-    if not success:
-        return {"status": "error", "message": "Invalid update"}
+@router.post("/submit_deltas")
+async def submit_deltas(
+    deltas: Dict[str, Any],
+    current_user: User = Depends(get_current_user)
+) -> dict[str, Any]:
+    """Submit locally trained weight deltas to the aggregation server."""
+    fl_server.submit_update("api_client", list(deltas.values()), n_samples=100)
     
-    # Try aggregating if enough clients
-    agg_result = fl_server.aggregate()
-    return agg_result
+    # Try aggregating (using min_clients=2 for testing)
+    aggregated = fl_server.aggregate()
+    
+    return {
+        "status": "success",
+        "aggregated": aggregated
+    }
+    
+@router.get("/global_weights")
+async def get_global_weights(
+    current_user: User = Depends(get_current_user)
+) -> dict[str, Any]:
+    """Get the latest global weights for local training."""
+    return fl_server.get_global_model()
+
+

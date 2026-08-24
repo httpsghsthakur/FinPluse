@@ -1,50 +1,40 @@
-"""
+﻿"""
 Finpluse v2 -- Security & Biometrics API
 """
 from typing import Any
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 
-from app.security.webauthn import WebAuthnManager
+from app.api.deps import get_current_user
+from app.db.models.user import User
+from app.security.biometrics.collector import BiometricPayload, process_raw_biometrics
+from app.security.biometrics.profiler import BiometricProfiler
+from app.security.biometrics.fraud_detector import calculate_anomaly_score
 
 router = APIRouter()
-webauthn = WebAuthnManager()
+profiler = BiometricProfiler()
 
+@router.post("/biometrics/log")
+async def log_biometrics(
+    payload: BiometricPayload,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user)
+) -> dict[str, Any]:
+    """Log continuous biometric features."""
+    if str(current_user.id) != payload.user_id:
+        raise HTTPException(status_code=403, detail="User mismatch")
+        
+    features = process_raw_biometrics(payload)
+    
+    # Calculate anomaly score BEFORE updating profile to catch deviations
+    profile = profiler.get_profile(payload.user_id)
+    anomaly_score = calculate_anomaly_score(features, profile) if profile else 0.0
+    
+    # Async profile update
+    background_tasks.add_task(profiler.update_profile, payload.user_id, features)
+    
+    return {
+        "status": "success",
+        "anomaly_score": anomaly_score,
+        "action": "CHALLENGE" if anomaly_score > 0.8 else "ALLOW"
+    }
 
-class RegOptionsRequest(BaseModel):
-    user_id: str
-    username: str
-
-class VerificationRequest(BaseModel):
-    user_id: str
-    response: dict[str, Any]
-
-
-@router.post("/webauthn/register/options")
-async def register_options(req: RegOptionsRequest) -> dict[str, Any]:
-    """Generate options for passkey registration."""
-    return webauthn.generate_registration(req.user_id, req.username)
-
-
-@router.post("/webauthn/register/verify")
-async def register_verify(req: VerificationRequest) -> dict[str, bool]:
-    """Verify and save new passkey."""
-    success = webauthn.verify_registration(req.user_id, req.response)
-    if not success:
-        raise HTTPException(status_code=400, detail="Verification failed")
-    return {"success": True}
-
-
-@router.post("/webauthn/authenticate/options")
-async def auth_options(user_id: str) -> dict[str, Any]:
-    """Generate options for passkey authentication."""
-    return webauthn.generate_authentication(user_id)
-
-
-@router.post("/webauthn/authenticate/verify")
-async def auth_verify(req: VerificationRequest) -> dict[str, bool]:
-    """Verify passkey authentication assertion."""
-    success = webauthn.verify_authentication(req.user_id, req.response)
-    if not success:
-        raise HTTPException(status_code=401, detail="Authentication failed")
-    return {"success": True, "token": "mock_jwt_token_for_biometric_session"}
