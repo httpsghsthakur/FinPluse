@@ -10,7 +10,7 @@ from app.db.models.account import Account
 from app.db.models.goal import Goal
 from app.schemas.simulator import ScenarioRequest, ScenarioResultResponse
 from app.services.simulator_service import simulator_service
-from app.services.seed_service import DEMO_USER_ID
+
 
 router = APIRouter()
 
@@ -22,7 +22,7 @@ async def run_simulation(
 ):
     # Get accounts
     acc_result = await db.execute(
-        select(Account).where(Account.user_id == DEMO_USER_ID)
+        select(Account).where(Account.user_id == current_user.id)
     )
     accounts = [
         {"id": a.id, "type": a.type, "balance": a.balance}
@@ -31,7 +31,7 @@ async def run_simulation(
 
     # Get goals
     goal_result = await db.execute(
-        select(Goal).where(Goal.user_id == DEMO_USER_ID)
+        select(Goal).where(Goal.user_id == current_user.id)
     )
     goals = [
         {

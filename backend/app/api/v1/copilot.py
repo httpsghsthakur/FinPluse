@@ -18,7 +18,7 @@ from app.db.models.transaction import Transaction
 from app.db.models.category import Category
 from app.db.models.goal import Goal
 from app.schemas.copilot import CopilotRequest, ChatMessageResponse
-from app.services.seed_service import DEMO_USER_ID
+
 from app.ml.classifiers.intent_classifier import intent_classifier
 
 router = APIRouter()
@@ -39,7 +39,7 @@ async def _compute_financials(db: AsyncSession) -> dict:
     """Compute live financial data from database."""
     # Accounts
     acc_result = await db.execute(
-        select(Account).where(Account.user_id == DEMO_USER_ID)
+        select(Account).where(Account.user_id == current_user.id)
     )
     accounts = acc_result.scalars().all()
     checking = sum(a.balance for a in accounts if a.type == "checking")
@@ -56,7 +56,7 @@ async def _compute_financials(db: AsyncSession) -> dict:
     tx_result = await db.execute(
         select(Transaction).where(
             and_(
-                Transaction.user_id == DEMO_USER_ID,
+                Transaction.user_id == current_user.id,
                 Transaction.date >= start_30,
                 Transaction.date <= today
             )
@@ -78,13 +78,13 @@ async def _compute_financials(db: AsyncSession) -> dict:
 
     # Goals
     goal_result = await db.execute(
-        select(Goal).where(Goal.user_id == DEMO_USER_ID)
+        select(Goal).where(Goal.user_id == current_user.id)
     )
     goals = goal_result.scalars().all()
 
     # Dining budget
     cat_result = await db.execute(
-        select(Category).where(Category.id == "cat-dining", Category.user_id == DEMO_USER_ID)
+        select(Category).where(Category.id == "cat-dining", Category.user_id == current_user.id)
     )
     dining_cat = cat_result.scalar_one_or_none()
     dining_budget = dining_cat.monthly_budget if dining_cat else 0

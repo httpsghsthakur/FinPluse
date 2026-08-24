@@ -24,7 +24,7 @@ from app.ml.anomaly.anomaly_detector import anomaly_detector
 from app.ml.recurring.recurring_detector import recurring_detector
 from app.ml.forecasting.forecast_model import cash_flow_forecaster
 from app.ml.registry.model_registry import model_registry
-from app.services.seed_service import DEMO_USER_ID
+
 
 router = APIRouter()
 ensemble_classifier = PersonalizedEnsembleClassifier()
@@ -51,7 +51,7 @@ async def classify_transaction(
     result = ensemble_classifier.classify(
         merchant=data.merchant,
         amount=data.amount,
-        user_id=data.user_id or DEMO_USER_ID,
+        user_id=data.user_id or current_user.id,
     )
     return {
         "prediction": result["category_id"],

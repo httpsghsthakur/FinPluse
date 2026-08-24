@@ -14,7 +14,7 @@ from app.db.models.transaction import Transaction
 from app.db.models.category import Category
 from app.db.models.recurring import RecurringTransaction
 from app.schemas.dashboard import DashboardSummaryResponse
-from app.services.seed_service import DEMO_USER_ID
+from app.api.deps import get_current_user
 
 router = APIRouter()
 
@@ -24,7 +24,7 @@ async def get_dashboard_summary(db: AsyncSession = Depends(get_db)):
 
     # Get accounts
     acc_result = await db.execute(
-        select(Account).where(Account.user_id == DEMO_USER_ID)
+        select(Account).where(Account.user_id == current_user.id)
     )
     accounts = acc_result.scalars().all()
     account_map = {a.id: a.name for a in accounts}
@@ -47,7 +47,7 @@ async def get_dashboard_summary(db: AsyncSession = Depends(get_db)):
     tx_result = await db.execute(
         select(Transaction).where(
             and_(
-                Transaction.user_id == DEMO_USER_ID,
+                Transaction.user_id == current_user.id,
                 Transaction.category_id != "cat-transfers",
                 Transaction.date >= start_date,
                 Transaction.date <= end_date,
@@ -69,7 +69,7 @@ async def get_dashboard_summary(db: AsyncSession = Depends(get_db)):
 
     # Get categories for budget total
     cat_result = await db.execute(
-        select(Category).where(Category.user_id == DEMO_USER_ID)
+        select(Category).where(Category.user_id == current_user.id)
     )
     categories = cat_result.scalars().all()
     total_budget = sum(c.monthly_budget or 0 for c in categories)
@@ -100,7 +100,7 @@ async def get_dashboard_summary(db: AsyncSession = Depends(get_db)):
     rolling_tx_result = await db.execute(
         select(func.sum(Transaction.amount)).where(
             and_(
-                Transaction.user_id == DEMO_USER_ID,
+                Transaction.user_id == current_user.id,
                 Transaction.amount < 0,
                 Transaction.category_id != "cat-transfers",
                 Transaction.date >= rolling_30_start,
@@ -115,7 +115,7 @@ async def get_dashboard_summary(db: AsyncSession = Depends(get_db)):
     # Recent transactions
     recent_result = await db.execute(
         select(Transaction)
-        .where(Transaction.user_id == DEMO_USER_ID)
+        .where(Transaction.user_id == current_user.id)
         .order_by(Transaction.date.desc())
         .limit(8)
     )
@@ -143,7 +143,7 @@ async def get_dashboard_summary(db: AsyncSession = Depends(get_db)):
         select(RecurringTransaction)
         .where(
             and_(
-                RecurringTransaction.user_id == DEMO_USER_ID,
+                RecurringTransaction.user_id == current_user.id,
                 RecurringTransaction.is_active == True,
                 RecurringTransaction.expected_next_date >= today
             )
@@ -178,7 +178,7 @@ async def get_dashboard_summary(db: AsyncSession = Depends(get_db)):
         hist_tx_res = await db.execute(
             select(Transaction.amount).where(
                 and_(
-                    Transaction.user_id == DEMO_USER_ID,
+                    Transaction.user_id == current_user.id,
                     Transaction.category_id != "cat-transfers",
                     Transaction.date >= t_start,
                     Transaction.date <= t_end

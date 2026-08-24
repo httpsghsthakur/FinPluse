@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.db.models.category import Category
 from app.schemas.category import CategoryResponse, CategoryCreate, CategoryUpdate
-from app.services.seed_service import DEMO_USER_ID
+
 
 router = APIRouter()
 
@@ -32,7 +32,7 @@ def _cat_to_response(cat: Category) -> dict:
 @router.get("", response_model=list[CategoryResponse])
 async def get_categories(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Category).where(Category.user_id == DEMO_USER_ID).order_by(Category.id)
+        select(Category).where(Category.user_id == current_user.id).order_by(Category.id)
     )
     return [_cat_to_response(c) for c in result.scalars().all()]
 
@@ -41,7 +41,7 @@ async def get_categories(db: AsyncSession = Depends(get_db)):
 async def add_category(data: CategoryCreate, db: AsyncSession = Depends(get_db)):
     cat = Category(
         id=f"cat-user-{int(datetime.utcnow().timestamp() * 1000)}",
-        user_id=DEMO_USER_ID,
+        user_id=current_user.id,
         name=data.name,
         icon=data.icon,
         color=data.color,
@@ -61,7 +61,7 @@ async def update_category(
     category_id: str, data: CategoryUpdate, db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
-        select(Category).where(Category.id == category_id, Category.user_id == DEMO_USER_ID)
+        select(Category).where(Category.id == category_id, Category.user_id == current_user.id)
     )
     cat = result.scalar_one_or_none()
     if not cat:
@@ -77,7 +77,7 @@ async def update_category(
 @router.delete("/{category_id}", status_code=204)
 async def delete_category(category_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Category).where(Category.id == category_id, Category.user_id == DEMO_USER_ID)
+        select(Category).where(Category.id == category_id, Category.user_id == current_user.id)
     )
     cat = result.scalar_one_or_none()
     if not cat:

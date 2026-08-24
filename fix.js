@@ -1,1 +1,1 @@
-const fs = require('fs'); let c = fs.readFileSync('src/pages/LandingPage.tsx', 'utf8'); c = c.replace(/"$/, ''); fs.writeFileSync('src/pages/LandingPage.tsx', c);
+const fs = require('fs'); let c = fs.readFileSync('src/lib/supabase.ts', 'utf8'); c = c.replace('\\\\Bearer \\\\', '\Bearer \\'); fs.writeFileSync('src/lib/supabase.ts', c);

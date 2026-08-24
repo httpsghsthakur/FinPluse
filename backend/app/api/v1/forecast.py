@@ -13,7 +13,7 @@ from app.db.models.transaction import Transaction
 from app.db.models.recurring import RecurringTransaction
 from app.db.models.goal import Goal
 from app.schemas.forecast import ForecastResponse, ForecastPointResponse, ForecastEventResponse
-from app.services.seed_service import DEMO_USER_ID
+
 
 router = APIRouter()
 
@@ -28,7 +28,7 @@ async def get_forecast(
     """
     # Get account balances
     result = await db.execute(
-        select(Account).where(Account.user_id == DEMO_USER_ID)
+        select(Account).where(Account.user_id == current_user.id)
     )
     accounts = result.scalars().all()
 
@@ -43,7 +43,7 @@ async def get_forecast(
     tx_result = await db.execute(
         select(Transaction).where(
             and_(
-                Transaction.user_id == DEMO_USER_ID,
+                Transaction.user_id == current_user.id,
                 Transaction.date >= start_history,
                 Transaction.date <= today
             )
@@ -96,7 +96,7 @@ async def get_forecast(
     rec_result = await db.execute(
         select(RecurringTransaction).where(
             and_(
-                RecurringTransaction.user_id == DEMO_USER_ID,
+                RecurringTransaction.user_id == current_user.id,
                 RecurringTransaction.is_active == True
             )
         )
@@ -107,7 +107,7 @@ async def get_forecast(
     goal_result = await db.execute(
         select(Goal).where(
             and_(
-                Goal.user_id == DEMO_USER_ID,
+                Goal.user_id == current_user.id,
                 Goal.is_completed == False,
                 Goal.monthly_contribution > 0
             )

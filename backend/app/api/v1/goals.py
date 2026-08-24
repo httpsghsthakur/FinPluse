@@ -11,7 +11,7 @@ from app.db.session import get_db
 from app.db.models.goal import Goal
 from app.db.models.transaction import Transaction
 from app.schemas.goal import GoalResponse, GoalCreate, GoalUpdate, GoalContribute
-from app.services.seed_service import DEMO_USER_ID
+
 
 router = APIRouter()
 
@@ -36,7 +36,7 @@ def _goal_to_response(g: Goal) -> dict:
 @router.get("", response_model=list[GoalResponse])
 async def get_goals(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Goal).where(Goal.user_id == DEMO_USER_ID).order_by(Goal.id)
+        select(Goal).where(Goal.user_id == current_user.id).order_by(Goal.id)
     )
     return [_goal_to_response(g) for g in result.scalars().all()]
 
@@ -45,7 +45,7 @@ async def get_goals(db: AsyncSession = Depends(get_db)):
 async def add_goal(data: GoalCreate, db: AsyncSession = Depends(get_db)):
     goal = Goal(
         id=f"goal-{int(datetime.utcnow().timestamp() * 1000)}",
-        user_id=DEMO_USER_ID,
+        user_id=current_user.id,
         name=data.name,
         target_amount=data.target_amount,
         current_amount=data.current_amount,
@@ -68,7 +68,7 @@ async def update_goal(
     goal_id: str, data: GoalUpdate, db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
-        select(Goal).where(Goal.id == goal_id, Goal.user_id == DEMO_USER_ID)
+        select(Goal).where(Goal.id == goal_id, Goal.user_id == current_user.id)
     )
     goal = result.scalar_one_or_none()
     if not goal:
@@ -90,7 +90,7 @@ async def update_goal(
 @router.delete("/{goal_id}", status_code=204)
 async def delete_goal(goal_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Goal).where(Goal.id == goal_id, Goal.user_id == DEMO_USER_ID)
+        select(Goal).where(Goal.id == goal_id, Goal.user_id == current_user.id)
     )
     goal = result.scalar_one_or_none()
     if not goal:
@@ -103,7 +103,7 @@ async def contribute_to_goal(
     goal_id: str, data: GoalContribute, db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
-        select(Goal).where(Goal.id == goal_id, Goal.user_id == DEMO_USER_ID)
+        select(Goal).where(Goal.id == goal_id, Goal.user_id == current_user.id)
     )
     goal = result.scalar_one_or_none()
     if not goal:
@@ -116,7 +116,7 @@ async def contribute_to_goal(
     # Create transfer transaction
     tx = Transaction(
         id=f"tx-goal-contrib-{int(datetime.utcnow().timestamp() * 1000)}",
-        user_id=DEMO_USER_ID,
+        user_id=current_user.id,
         date=date.today(),
         merchant=f"Goal Deposit: {goal.name}",
         category_id="cat-transfers",

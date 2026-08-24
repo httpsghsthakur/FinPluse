@@ -16,7 +16,7 @@ from app.schemas.transaction import (
     TransactionResponse, TransactionCreate, TransactionUpdate,
     PaginatedTransactions, CSVImportResult,
 )
-from app.services.seed_service import DEMO_USER_ID
+
 
 router = APIRouter()
 
@@ -56,7 +56,7 @@ async def get_transactions(
     limit: int = 20,
     db: AsyncSession = Depends(get_db),
 ):
-    query = select(Transaction).where(Transaction.user_id == DEMO_USER_ID)
+    query = select(Transaction).where(Transaction.user_id == current_user.id)
 
     if search:
         term = f"%{search.lower()}%"
@@ -129,7 +129,7 @@ async def get_transactions(
 async def add_transaction(data: TransactionCreate, db: AsyncSession = Depends(get_db)):
     tx = Transaction(
         id=f"tx-custom-{int(datetime.utcnow().timestamp() * 1000)}",
-        user_id=DEMO_USER_ID,
+        user_id=current_user.id,
         date=date.fromisoformat(data.date),
         merchant=data.merchant,
         category_id=data.category_id,
@@ -155,7 +155,7 @@ async def update_transaction(
 ):
     result = await db.execute(
         select(Transaction).where(
-            Transaction.id == transaction_id, Transaction.user_id == DEMO_USER_ID
+            Transaction.id == transaction_id, Transaction.user_id == current_user.id
         )
     )
     tx = result.scalar_one_or_none()
@@ -195,7 +195,7 @@ async def import_csv(data: dict, db: AsyncSession = Depends(get_db)):
                 continue
             tx = Transaction(
                 id=f"tx-import-{int(datetime.utcnow().timestamp() * 1000)}-{i}",
-                user_id=DEMO_USER_ID,
+                user_id=current_user.id,
                 date=date.fromisoformat(date_str) if date_str else date.today(),
                 merchant=merchant_str or "Imported Merchant",
                 amount=amount,
@@ -216,7 +216,7 @@ async def export_csv(db: AsyncSession = Depends(get_db)):
     """Export all transactions as CSV."""
     result = await db.execute(
         select(Transaction)
-        .where(Transaction.user_id == DEMO_USER_ID)
+        .where(Transaction.user_id == current_user.id)
         .order_by(desc(Transaction.date))
     )
     txs = result.scalars().all()

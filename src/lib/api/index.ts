@@ -47,7 +47,7 @@ async function apiFetch(
   options: RequestInit = {},
 ): Promise<Response> {
   const url = `${API_CONFIG.BASE_URL}${path}`;
-  const authHeaders = supabaseAuth.getHeaders();
+  const authHeaders = await supabaseAuth.getHeaders();
   const headers = {
     ...authHeaders,
     ...(options.headers || {}),

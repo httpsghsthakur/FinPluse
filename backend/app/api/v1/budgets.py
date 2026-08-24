@@ -12,7 +12,7 @@ from app.db.models.transaction import Transaction
 from app.db.models.category import Category
 from app.schemas.budget import BudgetResponse, BudgetUpdate
 from app.schemas.category import CategoryResponse
-from app.services.seed_service import DEMO_USER_ID
+
 
 router = APIRouter()
 
@@ -27,7 +27,7 @@ async def get_budgets(
     # Get expense categories
     cat_result = await db.execute(
         select(Category).where(
-            Category.user_id == DEMO_USER_ID, Category.type == "expense"
+            Category.user_id == current_user.id, Category.type == "expense"
         )
     )
     categories = cat_result.scalars().all()
@@ -42,7 +42,7 @@ async def get_budgets(
     tx_result = await db.execute(
         select(Transaction.category_id, func.sum(Transaction.amount)).where(
             and_(
-                Transaction.user_id == DEMO_USER_ID,
+                Transaction.user_id == current_user.id,
                 Transaction.amount < 0,
                 Transaction.date >= start_date,
                 Transaction.date <= end_date,
@@ -81,7 +81,7 @@ async def update_budget(
     """Update a category's monthly budget limit."""
     result = await db.execute(
         select(Category).where(
-            Category.id == category_id, Category.user_id == DEMO_USER_ID
+            Category.id == category_id, Category.user_id == current_user.id
         )
     )
     cat = result.scalar_one_or_none()

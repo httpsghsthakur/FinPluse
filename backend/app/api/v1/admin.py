@@ -18,7 +18,7 @@ from app.db.models.goal import Goal
 from app.db.models.insight import Insight
 from app.db.models.recurring import RecurringTransaction
 from app.services.seed_service import (
-    DEMO_USER_ID,
+    
     generate_user,
     generate_accounts,
     generate_categories,
@@ -34,13 +34,13 @@ router = APIRouter()
 async def seed_database(db: AsyncSession) -> None:
     """Seed the database with demo data."""
     # Check if demo user exists
-    result = await db.execute(select(User).where(User.id == DEMO_USER_ID))
+    result = await db.execute(select(User).where(User.id == current_user.id))
     existing_user = result.scalar_one_or_none()
     if existing_user:
         return  # Already seeded
 
     # Create user
-    user_data = generate_user(DEMO_USER_ID)
+    user_data = generate_user(current_user.id)
     user = User(
         id=user_data["id"],
         email=user_data["email"],
@@ -61,10 +61,10 @@ async def seed_database(db: AsyncSession) -> None:
     await db.flush()
 
     # Create categories
-    for cat_data in generate_categories(DEMO_USER_ID):
+    for cat_data in generate_categories(current_user.id):
         cat = Category(
             id=cat_data["id"],
-            user_id=DEMO_USER_ID,
+            user_id=current_user.id,
             name=cat_data["name"],
             icon=cat_data["icon"],
             color=cat_data["color"],
@@ -77,10 +77,10 @@ async def seed_database(db: AsyncSession) -> None:
     await db.flush()
 
     # Create accounts
-    for acc_data in generate_accounts(DEMO_USER_ID):
+    for acc_data in generate_accounts(current_user.id):
         acc = Account(
             id=acc_data["id"],
-            user_id=DEMO_USER_ID,
+            user_id=current_user.id,
             name=acc_data["name"],
             type=acc_data["type"],
             balance=acc_data["balance"],
@@ -94,10 +94,10 @@ async def seed_database(db: AsyncSession) -> None:
     await db.flush()
 
     # Create goals
-    for goal_data in generate_goals(DEMO_USER_ID):
+    for goal_data in generate_goals(current_user.id):
         goal = Goal(
             id=goal_data["id"],
-            user_id=DEMO_USER_ID,
+            user_id=current_user.id,
             name=goal_data["name"],
             target_amount=goal_data["target_amount"],
             current_amount=goal_data["current_amount"],
@@ -114,10 +114,10 @@ async def seed_database(db: AsyncSession) -> None:
     await db.flush()
 
     # Create transactions
-    for tx_data in generate_transactions(DEMO_USER_ID):
+    for tx_data in generate_transactions(current_user.id):
         tx = Transaction(
             id=tx_data["id"],
-            user_id=DEMO_USER_ID,
+            user_id=current_user.id,
             date=date.fromisoformat(tx_data["date"]),
             merchant=tx_data["merchant"],
             category_id=tx_data["category_id"],
@@ -133,10 +133,10 @@ async def seed_database(db: AsyncSession) -> None:
     await db.flush()
 
     # Create recurring
-    for rec_data in generate_recurring(DEMO_USER_ID):
+    for rec_data in generate_recurring(current_user.id):
         rec = RecurringTransaction(
             id=rec_data["id"],
-            user_id=DEMO_USER_ID,
+            user_id=current_user.id,
             merchant=rec_data["merchant"],
             category_id=rec_data["category_id"],
             account_id=rec_data["account_id"],
@@ -154,10 +154,10 @@ async def seed_database(db: AsyncSession) -> None:
     await db.flush()
 
     # Create insights
-    for ins_data in generate_insights(DEMO_USER_ID):
+    for ins_data in generate_insights(current_user.id):
         ins = Insight(
             id=ins_data["id"],
-            user_id=DEMO_USER_ID,
+            user_id=current_user.id,
             title=ins_data["title"],
             description=ins_data["description"],
             severity=ins_data["severity"],
@@ -177,13 +177,13 @@ async def seed_database(db: AsyncSession) -> None:
 async def reset_all_data(db: AsyncSession = Depends(get_db)):
     """Reset all demo data to initial state."""
     # Delete in dependency order
-    await db.execute(delete(Transaction).where(Transaction.user_id == DEMO_USER_ID))
-    await db.execute(delete(RecurringTransaction).where(RecurringTransaction.user_id == DEMO_USER_ID))
-    await db.execute(delete(Insight).where(Insight.user_id == DEMO_USER_ID))
-    await db.execute(delete(Goal).where(Goal.user_id == DEMO_USER_ID))
-    await db.execute(delete(Account).where(Account.user_id == DEMO_USER_ID))
-    await db.execute(delete(Category).where(Category.user_id == DEMO_USER_ID))
-    await db.execute(delete(User).where(User.id == DEMO_USER_ID))
+    await db.execute(delete(Transaction).where(Transaction.user_id == current_user.id))
+    await db.execute(delete(RecurringTransaction).where(RecurringTransaction.user_id == current_user.id))
+    await db.execute(delete(Insight).where(Insight.user_id == current_user.id))
+    await db.execute(delete(Goal).where(Goal.user_id == current_user.id))
+    await db.execute(delete(Account).where(Account.user_id == current_user.id))
+    await db.execute(delete(Category).where(Category.user_id == current_user.id))
+    await db.execute(delete(User).where(User.id == current_user.id))
     await db.flush()
 
     # Re-seed
@@ -193,14 +193,14 @@ async def reset_all_data(db: AsyncSession = Depends(get_db)):
 @router.get("/export")
 async def export_all_data(db: AsyncSession = Depends(get_db)):
     """Export all data as JSON."""
-    accs = (await db.execute(select(Account).where(Account.user_id == DEMO_USER_ID))).scalars().all()
-    cats = (await db.execute(select(Category).where(Category.user_id == DEMO_USER_ID))).scalars().all()
-    goals = (await db.execute(select(Goal).where(Goal.user_id == DEMO_USER_ID))).scalars().all()
+    accs = (await db.execute(select(Account).where(Account.user_id == current_user.id))).scalars().all()
+    cats = (await db.execute(select(Category).where(Category.user_id == current_user.id))).scalars().all()
+    goals = (await db.execute(select(Goal).where(Goal.user_id == current_user.id))).scalars().all()
     txs = (await db.execute(
-        select(Transaction).where(Transaction.user_id == DEMO_USER_ID).order_by(Transaction.date.desc())
+        select(Transaction).where(Transaction.user_id == current_user.id).order_by(Transaction.date.desc())
     )).scalars().all()
-    recs = (await db.execute(select(RecurringTransaction).where(RecurringTransaction.user_id == DEMO_USER_ID))).scalars().all()
-    insights = (await db.execute(select(Insight).where(Insight.user_id == DEMO_USER_ID))).scalars().all()
+    recs = (await db.execute(select(RecurringTransaction).where(RecurringTransaction.user_id == current_user.id))).scalars().all()
+    insights = (await db.execute(select(Insight).where(Insight.user_id == current_user.id))).scalars().all()
 
     return {
         "accounts": [{"id": a.id, "name": a.name, "type": a.type, "balance": a.balance, "currency": a.currency, "institution": a.institution, "mask": a.mask, "color": a.color, "lastSynced": a.last_synced.isoformat() if a.last_synced else "", "isActive": a.is_active} for a in accs],
@@ -215,7 +215,7 @@ async def export_all_data(db: AsyncSession = Depends(get_db)):
 async def replace_transactions_from_csv(data: dict, db: AsyncSession = Depends(get_db)):
     """Wipes all transactions and loads them from CSV text."""
     # Wipe transactions
-    await db.execute(delete(Transaction).where(Transaction.user_id == DEMO_USER_ID))
+    await db.execute(delete(Transaction).where(Transaction.user_id == current_user.id))
     
     csv_text = data.get("csvText", "")
     lines = csv_text.strip().split("\n")
@@ -234,7 +234,7 @@ async def replace_transactions_from_csv(data: dict, db: AsyncSession = Depends(g
                 continue
             tx = Transaction(
                 id=f"tx-import-{int(datetime.utcnow().timestamp() * 1000)}-{i}",
-                user_id=DEMO_USER_ID,
+                user_id=current_user.id,
                 date=date.fromisoformat(date_str) if date_str else date.today(),
                 merchant=merchant_str or "Imported Merchant",
                 amount=amount,

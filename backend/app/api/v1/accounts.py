@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.db.models.account import Account
 from app.schemas.account import AccountResponse, AccountCreate
-from app.services.seed_service import DEMO_USER_ID
+
 
 router = APIRouter()
 
@@ -33,7 +33,7 @@ def _account_to_response(acc: Account) -> dict:
 @router.get("", response_model=list[AccountResponse])
 async def get_accounts(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Account).where(Account.user_id == DEMO_USER_ID).order_by(Account.id)
+        select(Account).where(Account.user_id == current_user.id).order_by(Account.id)
     )
     accounts = result.scalars().all()
     return [_account_to_response(a) for a in accounts]
@@ -43,7 +43,7 @@ async def get_accounts(db: AsyncSession = Depends(get_db)):
 async def connect_account(data: AccountCreate, db: AsyncSession = Depends(get_db)):
     acc = Account(
         id=f"acc-{int(datetime.utcnow().timestamp() * 1000)}",
-        user_id=DEMO_USER_ID,
+        user_id=current_user.id,
         name=data.name,
         type=data.type,
         balance=data.balance,
@@ -61,7 +61,7 @@ async def connect_account(data: AccountCreate, db: AsyncSession = Depends(get_db
 @router.post("/{account_id}/sync", response_model=AccountResponse)
 async def sync_account(account_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Account).where(Account.id == account_id, Account.user_id == DEMO_USER_ID)
+        select(Account).where(Account.id == account_id, Account.user_id == current_user.id)
     )
     acc = result.scalar_one_or_none()
     if not acc:
@@ -74,7 +74,7 @@ async def sync_account(account_id: str, db: AsyncSession = Depends(get_db)):
 @router.delete("/{account_id}", status_code=204)
 async def disconnect_account(account_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Account).where(Account.id == account_id, Account.user_id == DEMO_USER_ID)
+        select(Account).where(Account.id == account_id, Account.user_id == current_user.id)
     )
     acc = result.scalar_one_or_none()
     if not acc:

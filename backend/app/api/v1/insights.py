@@ -10,7 +10,7 @@ from app.db.models.insight import Insight
 from app.db.models.transaction import Transaction
 from app.db.models.category import Category
 from app.schemas.insight import InsightResponse, WeeklyDigestResponse
-from app.services.seed_service import DEMO_USER_ID
+
 
 router = APIRouter()
 
@@ -36,7 +36,7 @@ def _insight_to_response(ins: Insight) -> dict:
 @router.get("", response_model=list[InsightResponse])
 async def get_insights(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Insight).where(Insight.user_id == DEMO_USER_ID).order_by(Insight.date.desc())
+        select(Insight).where(Insight.user_id == current_user.id).order_by(Insight.date.desc())
     )
     return [_insight_to_response(i) for i in result.scalars().all()]
 
@@ -44,7 +44,7 @@ async def get_insights(db: AsyncSession = Depends(get_db)):
 @router.post("/{insight_id}/dismiss", status_code=204)
 async def dismiss_insight(insight_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Insight).where(Insight.id == insight_id, Insight.user_id == DEMO_USER_ID)
+        select(Insight).where(Insight.id == insight_id, Insight.user_id == current_user.id)
     )
     ins = result.scalar_one_or_none()
     if not ins:
@@ -56,7 +56,7 @@ async def dismiss_insight(insight_id: str, db: AsyncSession = Depends(get_db)):
 @router.post("/{insight_id}/like", status_code=204)
 async def like_insight(insight_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Insight).where(Insight.id == insight_id, Insight.user_id == DEMO_USER_ID)
+        select(Insight).where(Insight.id == insight_id, Insight.user_id == current_user.id)
     )
     ins = result.scalar_one_or_none()
     if not ins:
@@ -78,7 +78,7 @@ async def get_weekly_digest(db: AsyncSession = Depends(get_db)):
     tx_res = await db.execute(
         select(Transaction).where(
             and_(
-                Transaction.user_id == DEMO_USER_ID,
+                Transaction.user_id == current_user.id,
                 Transaction.date >= week_start,
                 Transaction.date <= today
             )
@@ -90,7 +90,7 @@ async def get_weekly_digest(db: AsyncSession = Depends(get_db)):
     prev_tx_res = await db.execute(
         select(Transaction).where(
             and_(
-                Transaction.user_id == DEMO_USER_ID,
+                Transaction.user_id == current_user.id,
                 Transaction.date >= prev_week_start,
                 Transaction.date < week_start
             )
@@ -104,7 +104,7 @@ async def get_weekly_digest(db: AsyncSession = Depends(get_db)):
     pw_expense = abs(sum(t.amount for t in prev_week_txs if t.amount < 0))
     
     # Category mapping
-    cat_res = await db.execute(select(Category).where(Category.user_id == DEMO_USER_ID))
+    cat_res = await db.execute(select(Category).where(Category.user_id == current_user.id))
     categories = {c.id: c.name for c in cat_res.scalars().all()}
     
     # Top Category
