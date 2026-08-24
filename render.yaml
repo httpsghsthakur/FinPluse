@@ -1,37 +1,13 @@
-# ==============================================================================
-# Finpluse — Render Unified Service Blueprint
-# ==============================================================================
-# Deploys BOTH Frontend and Backend on a SINGLE Render Web Service instance.
-# No CORS issues, single URL for UI and API, optimal resource utilization.
-
-services:
+﻿services:
   - type: web
-    name: finpluse
-    runtime: python
-    plan: free
-    region: oregon
-    buildCommand: npm install && npm run build && cd backend && pip install --upgrade pip && pip install --prefer-binary -r requirements.txt
-    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /health
-    autoDeploy: true
+    name: finpaluse
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.9
-      - key: NODE_VERSION
-        value: 20.14.0
+        value: 3.12.0
       - key: ENVIRONMENT
         value: production
-      - key: DEBUG
-        value: false
-      - key: SEED_DEMO_DATA
-        value: true
-      - key: CORS_ORIGINS
-        value: "*"
-      - key: DATABASE_URL
-        value: postgresql+asyncpg://postgres.ikilxctcgqsilkaeilww:Ghsthakur%40123@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?ssl=require
-      - key: DATABASE_URL_SYNC
-        value: postgresql://postgres.ikilxctcgqsilkaeilww:Ghsthakur%40123@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require
-      - key: SUPABASE_URL
-        value: https://ikilxctcgqsilkaeilww.supabase.co
-      - key: SECRET_KEY
-        generateValue: true
+      - key: NODE_VERSION
+        value: 20.9.0

@@ -1,5 +1,5 @@
-"""
-FinPilot Backend — Main Application Entry Point
+﻿"""
+FinPilot Backend â€” Main Application Entry Point
 
 FastAPI application with lifespan management for database initialization.
 """
@@ -52,7 +52,7 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning(f"Seed skipped: {e}")
 
-    logger.info(f"Finpluse backend ready — env={settings.app_env}")
+    logger.info(f"Finpluse backend ready â€” env={settings.app_env}")
     yield
 
     # Shutdown
@@ -61,7 +61,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Finpluse — AI Financial Copilot API",
+    title="Finpluse â€” AI Financial Copilot API",
     description=(
         "Complete financial intelligence backend for Finpluse.\n\n"
         "Provides transaction management, ML-powered categorization, "
@@ -74,10 +74,10 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS — Support local dev, Render, and custom domains
+# CORS â€” Support local dev, Render, and custom domains
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173", "https://finpaluse.onrender.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -111,7 +111,7 @@ async def health():
         return {"status": "degraded", "db_error": str(e), "url": sanitized_url, "traceback": traceback.format_exc()}
 
 
-# ── Static SPA Hosting (Unified Frontend + Backend) ──────────────────────────
+# â”€â”€ Static SPA Hosting (Unified Frontend + Backend) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Check for built frontend in root 'dist' or 'backend/dist'
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 DIST_DIR = ROOT_DIR / "dist"
@@ -141,4 +141,5 @@ else:
             "docs": "/docs",
             "message": "To serve frontend from this server, run 'npm run build' in project root",
         }
+
 
