@@ -91,6 +91,10 @@ from fastapi.responses import FileResponse
 # Mount API v1
 app.include_router(api_router, prefix="/api/v1")
 
+# Mount API v2
+from app.api.v2.router import v2_router
+app.include_router(v2_router, prefix="/api/v2")
+
 
 @app.get("/health", tags=["Health"])
 async def health():
@@ -137,3 +141,4 @@ else:
             "docs": "/docs",
             "message": "To serve frontend from this server, run 'npm run build' in project root",
         }
+

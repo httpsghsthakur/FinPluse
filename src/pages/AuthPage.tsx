@@ -60,7 +60,7 @@ export const AuthPage: React.FC = () => {
       <div className="w-full max-w-md p-8 rounded-3xl bg-[#0a0a0a] border border-white/[0.04] relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[80px] pointer-events-none" />
         <h1 className="text-2xl font-medium mb-2 text-white">
-          {isLogin ? "Welcome back" : "Create account"}
+          {isLogin ? "Welcome to Finpluse" : "Create account"}
         </h1>
         <p className="text-[#a1a1aa] text-sm mb-8">
           {isLogin
