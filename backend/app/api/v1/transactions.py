@@ -1,4 +1,4 @@
-"""Transactions endpoints — supports filtering, pagination, CSV import/export."""
+﻿"""Transactions endpoints â€” supports filtering, pagination, CSV import/export."""
 from __future__ import annotations
 from app.api.deps import get_current_user
 from app.db.models.user import User
@@ -185,6 +185,16 @@ async def import_csv(data: dict, db: AsyncSession = Depends(get_db), current_use
     csv_text = data.get("csvText", "")
     lines = csv_text.strip().split("\n")
     imported = 0
+    
+    # Ensure user has an account
+    acc_res = await db.execute(select(Account).where(Account.user_id == current_user.id).limit(1))
+    account = acc_res.scalars().first()
+    if not account:
+        from app.db.models.account import Account
+        account = Account(id=f"acc-{current_user.id[:8]}", user_id=current_user.id, name="Default Account", type="checking", balance=0.0, currency="USD")
+        db.add(account)
+        await db.flush()
+    account_id = account.id
 
     for i, line in enumerate(lines):
         if i == 0:
@@ -204,7 +214,7 @@ async def import_csv(data: dict, db: AsyncSession = Depends(get_db), current_use
                 merchant=merchant_str or "Imported Merchant",
                 amount=amount,
                 category_id=cat_str,
-                account_id="acc-checking",
+                account_id=account_id,
                 status="settled",
                 is_recurring=False,
             )
@@ -212,7 +222,7 @@ async def import_csv(data: dict, db: AsyncSession = Depends(get_db), current_use
             imported += 1
 
     await db.flush()
-    return {"importedCount": imported}
+    return {"imported_count": imported}
 
 
 @router.get("/export", response_class=PlainTextResponse)
@@ -240,3 +250,5 @@ async def export_csv(db: AsyncSession = Depends(get_db), current_user: User = De
         ])
 
     return PlainTextResponse(output.getvalue(), media_type="text/csv")
+
+
