@@ -12,7 +12,7 @@ export const LandingPage: React.FC = () => {
             <div className="w-6 h-6 rounded-sm bg-white flex items-center justify-center">
               <Activity className="w-4 h-4 text-black" strokeWidth={3} />
             </div>
-            <span className="text-sm font-bold tracking-tight">Finpilot</span>
+            <span className="text-sm font-bold tracking-tight">Finpluse</span>
           </div>
           <div className="flex items-center gap-6">
             <a href="#features" className="text-xs font-medium text-[#a1a1aa] hover:text-white transition-colors">Features</a>
@@ -32,7 +32,7 @@ export const LandingPage: React.FC = () => {
         <div className="relative z-10 flex flex-col items-center text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.02] mb-8">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[11px] font-medium text-[#a1a1aa] uppercase tracking-widest">Finpilot is live</span>
+            <span className="text-[11px] font-medium text-[#a1a1aa] uppercase tracking-widest">Finpluse is live</span>
           </div>
           
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60 max-w-5xl mx-auto leading-[1.05]">
@@ -40,7 +40,7 @@ export const LandingPage: React.FC = () => {
           </h1>
           
           <p className="mt-8 text-[#a1a1aa] text-lg md:text-xl max-w-2xl mx-auto font-light leading-relaxed">
-            Finpilot connects to your accounts and uses deterministic AI to model your cash flow, analyze anomalies, and project your 90-day runway. 
+            Finpluse connects to your accounts and uses deterministic AI to model your cash flow, analyze anomalies, and project your 90-day runway. 
           </p>
 
           <div className="mt-12 flex items-center gap-4">
@@ -58,7 +58,7 @@ export const LandingPage: React.FC = () => {
             <Brain className="w-8 h-8 text-[#ededed] mb-12" strokeWidth={1.5} />
             <h3 className="text-2xl font-medium mb-3 text-white">Conversational AI Engine</h3>
             <p className="text-[#a1a1aa] max-w-md font-light leading-relaxed">
-              Ask complex questions about your finances. Finpilot queries your real data and mathematically guarantees its answers. No hallucinations, just facts.
+              Ask complex questions about your finances. Finpluse queries your real data and mathematically guarantees its answers. No hallucinations, just facts.
             </p>
           </div>
           
@@ -97,10 +97,10 @@ export const LandingPage: React.FC = () => {
             <div className="w-4 h-4 rounded-[2px] bg-white flex items-center justify-center">
               <Activity className="w-3 h-3 text-black" strokeWidth={4} />
             </div>
-            <span className="text-xs font-bold tracking-tight text-white">Finpilot</span>
+            <span className="text-xs font-bold tracking-tight text-white">Finpluse</span>
           </div>
           <div className="text-xs text-[#666] font-light">
-            © 2026 Finpilot AI.
+            © 2026 Finpluse AI.
           </div>
         </div>
       </footer>

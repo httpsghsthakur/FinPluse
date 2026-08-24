@@ -49,7 +49,7 @@ If configuring manually without Blueprints:
    | `ENVIRONMENT`    | `production`                                |
    | `DEBUG`          | `false`                                     |
    | `SEED_DEMO_DATA` | `true`                                      |
-   | `DATABASE_URL`   | `sqlite+aiosqlite:///./finpilot.db`         |
+   | `DATABASE_URL`   | `sqlite+aiosqlite:///./finpluse.db`         |
    | `SECRET_KEY`     | _(Click "Generate" or enter random string)_ |
 4. Click **Create Web Service**.
 
