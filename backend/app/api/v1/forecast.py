@@ -13,14 +13,18 @@ from app.db.models.transaction import Transaction
 from app.db.models.recurring import RecurringTransaction
 from app.db.models.goal import Goal
 from app.schemas.forecast import ForecastResponse, ForecastPointResponse, ForecastEventResponse
+from app.api.deps import get_current_user
+from app.db.models.user import User
 
 
 router = APIRouter()
 
 @router.get("", response_model=ForecastResponse)
+
 async def get_forecast(
     days: int = Query(default=90, ge=7, le=365),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Generate cash-flow forecast matching frontend's getForecast().

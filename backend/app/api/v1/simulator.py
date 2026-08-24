@@ -15,10 +15,14 @@ from app.services.simulator_service import simulator_service
 router = APIRouter()
 
 
+from app.api.deps import get_current_user
+from app.db.models.user import User
+
 @router.post("/run", response_model=ScenarioResultResponse)
 async def run_simulation(
     scenario: ScenarioRequest,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     # Get accounts
     acc_result = await db.execute(

@@ -1,6 +1,8 @@
 """AI Copilot endpoint — Phase 1: deterministic responses matching frontend aiEngine.
 Phase 7 will replace this with actual LLM + function calling."""
 from __future__ import annotations
+from app.api.deps import get_current_user
+from app.db.models.user import User
 
 import time
 import asyncio
@@ -35,7 +37,7 @@ def _format_pct(value: float) -> str:
     return f"{sign}{value:.1f}%"
 
 
-async def _compute_financials(db: AsyncSession) -> dict:
+async def _compute_financials(db: AsyncSession, current_user: User) -> dict:
     """Compute live financial data from database."""
     # Accounts
     acc_result = await db.execute(
@@ -219,13 +221,14 @@ def _generate_response(query: str, data: dict, personality: str) -> dict:
 async def copilot_stream(
     request: CopilotRequest,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """SSE streaming copilot response.
     
     Phase 1: Deterministic grounded responses using DB data.
     Phase 7: Full LLM + function calling with streaming.
     """
-    financials = await _compute_financials(db)
+    financials = await _compute_financials(db, current_user)
     response = _generate_response(request.message, financials, request.personality or "balanced")
     content = response["content"]
 
@@ -277,9 +280,10 @@ async def copilot_stream(
 async def copilot_chat(
     request: CopilotRequest,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Non-streaming copilot response."""
-    financials = await _compute_financials(db)
+    financials = await _compute_financials(db, current_user)
     response = _generate_response(request.message, financials, request.personality or "balanced")
 
     return {

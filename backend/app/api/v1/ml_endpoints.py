@@ -9,6 +9,8 @@ Provides dedicated endpoints for model inference:
 - Model registry metadata
 """
 from __future__ import annotations
+from app.api.deps import get_current_user
+from app.db.models.user import User
 
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
@@ -46,6 +48,7 @@ class AnomalyRequest(CamelModel):
 async def classify_transaction(
     data: ClassifyRequest,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Predict category with confidence score and human-readable explanation."""
     result = ensemble_classifier.classify(
@@ -67,6 +70,7 @@ async def classify_transaction(
 async def detect_transaction_anomaly(
     data: AnomalyRequest,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Compute anomaly score and explainability factors for a transaction."""
     score = anomaly_detector.score_transaction(

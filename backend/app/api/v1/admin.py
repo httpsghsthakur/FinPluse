@@ -17,6 +17,7 @@ from app.db.models.category import Category
 from app.db.models.goal import Goal
 from app.db.models.insight import Insight
 from app.db.models.recurring import RecurringTransaction
+from app.api.deps import get_current_user
 from app.services.seed_service import (
     
     generate_user,
@@ -31,7 +32,9 @@ from app.services.seed_service import (
 router = APIRouter()
 
 
-async def seed_database(db: AsyncSession) -> None:
+async def seed_database(db: AsyncSession, current_user: User = None) -> None:
+    if current_user is None:
+        current_user = User(id='user_demo_123')
     """Seed the database with demo data."""
     # Check if demo user exists
     result = await db.execute(select(User).where(User.id == current_user.id))
@@ -174,7 +177,7 @@ async def seed_database(db: AsyncSession) -> None:
 
 
 @router.post("/reset", status_code=204)
-async def reset_all_data(db: AsyncSession = Depends(get_db)):
+async def reset_all_data(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Reset all demo data to initial state."""
     # Delete in dependency order
     await db.execute(delete(Transaction).where(Transaction.user_id == current_user.id))
@@ -191,7 +194,7 @@ async def reset_all_data(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/export")
-async def export_all_data(db: AsyncSession = Depends(get_db)):
+async def export_all_data(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Export all data as JSON."""
     accs = (await db.execute(select(Account).where(Account.user_id == current_user.id))).scalars().all()
     cats = (await db.execute(select(Category).where(Category.user_id == current_user.id))).scalars().all()
@@ -212,7 +215,7 @@ async def export_all_data(db: AsyncSession = Depends(get_db)):
     }
 
 @router.post("/replace_transactions_from_csv", status_code=200)
-async def replace_transactions_from_csv(data: dict, db: AsyncSession = Depends(get_db)):
+async def replace_transactions_from_csv(data: dict, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Wipes all transactions and loads them from CSV text."""
     # Wipe transactions
     await db.execute(delete(Transaction).where(Transaction.user_id == current_user.id))

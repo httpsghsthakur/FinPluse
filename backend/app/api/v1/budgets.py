@@ -1,5 +1,7 @@
 """Budgets endpoints — computes spent/predicted from live transaction data."""
 from __future__ import annotations
+from app.api.deps import get_current_user
+from app.db.models.user import User
 
 from datetime import datetime, date
 
@@ -21,6 +23,7 @@ router = APIRouter()
 async def get_budgets(
     month: str | None = None,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     target_month = month or datetime.now().strftime("%Y-%m")
 

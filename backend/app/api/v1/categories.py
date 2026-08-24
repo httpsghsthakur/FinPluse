@@ -1,5 +1,7 @@
 """Categories endpoints."""
 from __future__ import annotations
+from app.api.deps import get_current_user
+from app.db.models.user import User
 
 from datetime import datetime
 
@@ -30,7 +32,7 @@ def _cat_to_response(cat: Category) -> dict:
 
 
 @router.get("", response_model=list[CategoryResponse])
-async def get_categories(db: AsyncSession = Depends(get_db)):
+async def get_categories(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     result = await db.execute(
         select(Category).where(Category.user_id == current_user.id).order_by(Category.id)
     )
@@ -38,7 +40,8 @@ async def get_categories(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("", response_model=CategoryResponse, status_code=201)
-async def add_category(data: CategoryCreate, db: AsyncSession = Depends(get_db)):
+async def add_category(data: CategoryCreate, db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),):
     cat = Category(
         id=f"cat-user-{int(datetime.utcnow().timestamp() * 1000)}",
         user_id=current_user.id,
@@ -58,7 +61,8 @@ async def add_category(data: CategoryCreate, db: AsyncSession = Depends(get_db))
 
 @router.patch("/{category_id}", response_model=CategoryResponse)
 async def update_category(
-    category_id: str, data: CategoryUpdate, db: AsyncSession = Depends(get_db)
+    category_id: str, data: CategoryUpdate, db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(Category).where(Category.id == category_id, Category.user_id == current_user.id)
@@ -75,7 +79,8 @@ async def update_category(
 
 
 @router.delete("/{category_id}", status_code=204)
-async def delete_category(category_id: str, db: AsyncSession = Depends(get_db)):
+async def delete_category(category_id: str, db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),):
     result = await db.execute(
         select(Category).where(Category.id == category_id, Category.user_id == current_user.id)
     )

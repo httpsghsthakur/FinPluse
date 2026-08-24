@@ -1,5 +1,7 @@
 """Goals endpoints."""
 from __future__ import annotations
+from app.api.deps import get_current_user
+from app.db.models.user import User
 
 from datetime import datetime, date
 
@@ -34,7 +36,7 @@ def _goal_to_response(g: Goal) -> dict:
 
 
 @router.get("", response_model=list[GoalResponse])
-async def get_goals(db: AsyncSession = Depends(get_db)):
+async def get_goals(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     result = await db.execute(
         select(Goal).where(Goal.user_id == current_user.id).order_by(Goal.id)
     )
@@ -42,7 +44,8 @@ async def get_goals(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("", response_model=GoalResponse, status_code=201)
-async def add_goal(data: GoalCreate, db: AsyncSession = Depends(get_db)):
+async def add_goal(data: GoalCreate, db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),):
     goal = Goal(
         id=f"goal-{int(datetime.utcnow().timestamp() * 1000)}",
         user_id=current_user.id,
@@ -65,7 +68,8 @@ async def add_goal(data: GoalCreate, db: AsyncSession = Depends(get_db)):
 
 @router.patch("/{goal_id}", response_model=GoalResponse)
 async def update_goal(
-    goal_id: str, data: GoalUpdate, db: AsyncSession = Depends(get_db)
+    goal_id: str, data: GoalUpdate, db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(Goal).where(Goal.id == goal_id, Goal.user_id == current_user.id)
@@ -88,7 +92,8 @@ async def update_goal(
 
 
 @router.delete("/{goal_id}", status_code=204)
-async def delete_goal(goal_id: str, db: AsyncSession = Depends(get_db)):
+async def delete_goal(goal_id: str, db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),):
     result = await db.execute(
         select(Goal).where(Goal.id == goal_id, Goal.user_id == current_user.id)
     )
@@ -100,7 +105,8 @@ async def delete_goal(goal_id: str, db: AsyncSession = Depends(get_db)):
 
 @router.post("/{goal_id}/contribute", response_model=GoalResponse)
 async def contribute_to_goal(
-    goal_id: str, data: GoalContribute, db: AsyncSession = Depends(get_db)
+    goal_id: str, data: GoalContribute, db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(Goal).where(Goal.id == goal_id, Goal.user_id == current_user.id)

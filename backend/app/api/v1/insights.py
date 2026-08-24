@@ -1,5 +1,7 @@
 """Insights endpoints."""
 from __future__ import annotations
+from app.api.deps import get_current_user
+from app.db.models.user import User
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, and_
@@ -34,7 +36,7 @@ def _insight_to_response(ins: Insight) -> dict:
 
 
 @router.get("", response_model=list[InsightResponse])
-async def get_insights(db: AsyncSession = Depends(get_db)):
+async def get_insights(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     result = await db.execute(
         select(Insight).where(Insight.user_id == current_user.id).order_by(Insight.date.desc())
     )
@@ -42,7 +44,8 @@ async def get_insights(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/{insight_id}/dismiss", status_code=204)
-async def dismiss_insight(insight_id: str, db: AsyncSession = Depends(get_db)):
+async def dismiss_insight(insight_id: str, db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),):
     result = await db.execute(
         select(Insight).where(Insight.id == insight_id, Insight.user_id == current_user.id)
     )
@@ -54,7 +57,8 @@ async def dismiss_insight(insight_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/{insight_id}/like", status_code=204)
-async def like_insight(insight_id: str, db: AsyncSession = Depends(get_db)):
+async def like_insight(insight_id: str, db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),):
     result = await db.execute(
         select(Insight).where(Insight.id == insight_id, Insight.user_id == current_user.id)
     )
@@ -66,7 +70,7 @@ async def like_insight(insight_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/digest/weekly", response_model=WeeklyDigestResponse)
-async def get_weekly_digest(db: AsyncSession = Depends(get_db)):
+async def get_weekly_digest(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Weekly digest dynamically computed from recent transactions."""
     from datetime import datetime, timedelta, date
     now = datetime.now()

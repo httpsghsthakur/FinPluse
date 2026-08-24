@@ -19,7 +19,7 @@ from app.api.deps import get_current_user
 router = APIRouter()
 
 @router.get("/summary", response_model=DashboardSummaryResponse)
-async def get_dashboard_summary(db: AsyncSession = Depends(get_db)):
+async def get_dashboard_summary(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Compute live dashboard summary from real DB data."""
 
     # Get accounts

@@ -1,5 +1,7 @@
 """Transactions endpoints — supports filtering, pagination, CSV import/export."""
 from __future__ import annotations
+from app.api.deps import get_current_user
+from app.db.models.user import User
 
 import csv
 import io
@@ -55,6 +57,7 @@ async def get_transactions(
     page: int = 1,
     limit: int = 20,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     query = select(Transaction).where(Transaction.user_id == current_user.id)
 
@@ -126,7 +129,7 @@ async def get_transactions(
 
 
 @router.post("", response_model=TransactionResponse, status_code=201)
-async def add_transaction(data: TransactionCreate, db: AsyncSession = Depends(get_db)):
+async def add_transaction(data: TransactionCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     tx = Transaction(
         id=f"tx-custom-{int(datetime.utcnow().timestamp() * 1000)}",
         user_id=current_user.id,
@@ -152,6 +155,7 @@ async def update_transaction(
     transaction_id: str,
     data: TransactionUpdate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(Transaction).where(
@@ -176,7 +180,7 @@ async def update_transaction(
 
 
 @router.post("/import", response_model=CSVImportResult)
-async def import_csv(data: dict, db: AsyncSession = Depends(get_db)):
+async def import_csv(data: dict, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Import transactions from CSV text."""
     csv_text = data.get("csvText", "")
     lines = csv_text.strip().split("\n")
@@ -212,7 +216,7 @@ async def import_csv(data: dict, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/export", response_class=PlainTextResponse)
-async def export_csv(db: AsyncSession = Depends(get_db)):
+async def export_csv(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Export all transactions as CSV."""
     result = await db.execute(
         select(Transaction)
