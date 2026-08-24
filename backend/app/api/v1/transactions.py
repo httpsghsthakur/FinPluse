@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.db.models.transaction import Transaction
+from app.ml.anomaly.ml_detectors import EnhancedIsolationForest
 from app.schemas.transaction import (
     TransactionResponse, TransactionCreate, TransactionUpdate,
     PaginatedTransactions, CSVImportResult,

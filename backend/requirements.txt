@@ -53,3 +53,5 @@ tzlocal>=5.4.0
 
 PyJWT>=2.8.0
 
+prophet
+openai

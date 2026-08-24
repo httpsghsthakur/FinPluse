@@ -22,6 +22,7 @@ from app.db.models.goal import Goal
 from app.schemas.copilot import CopilotRequest, ChatMessageResponse
 
 from app.ml.classifiers.intent_classifier import intent_classifier
+from app.ml.copilot.sql_agent import sql_agent
 
 router = APIRouter()
 
