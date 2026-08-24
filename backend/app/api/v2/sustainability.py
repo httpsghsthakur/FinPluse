@@ -1,26 +1,35 @@
-"""
+﻿"""
 Finpluse v2 -- Sustainability API
 """
-from typing import Any
-from fastapi import APIRouter
-from pydantic import BaseModel
+from typing import Any, Dict, List
+from fastapi import APIRouter, Depends, HTTPException
 
-from app.sustainability.carbon_estimator import CarbonEstimator
+from app.api.deps import get_current_user
+from app.db.models.user import User
+from app.services.open_banking import OpenBankingService
+from app.sustainability.calculator import aggregate_monthly_footprint
+from app.sustainability.green_alternatives import suggest_alternatives
 
 router = APIRouter()
-estimator = CarbonEstimator()
+banking_service = OpenBankingService()
 
-class CarbonRequest(BaseModel):
-    amount: float
-    merchant: str
-    category_id: str = ""
-
-@router.post("/estimate")
-async def estimate_transaction(req: CarbonRequest) -> dict[str, Any]:
-    """Estimate CO2 for a single transaction."""
-    return estimator.estimate_transaction(req.amount, req.merchant, req.category_id)
-
-@router.post("/aggregate")
-async def aggregate_carbon(transactions: list[dict[str, Any]]) -> dict[str, Any]:
-    """Calculate aggregated monthly footprint."""
-    return estimator.aggregate_monthly(transactions)
+@router.get("/footprint")
+async def get_footprint(
+    current_user: User = Depends(get_current_user)
+) -> dict[str, Any]:
+    """Get aggregated carbon footprint based on transactions."""
+    # In a real app, we'd fetch actual transactions from DB for this user
+    # For demo, we use mock from OpenBankingService
+    txs = banking_service.sync_transactions("mock_token")
+    
+    totals = aggregate_monthly_footprint(txs)
+    total_co2 = sum(totals.values())
+    
+    suggestions = suggest_alternatives(txs)
+    
+    return {
+        "status": "success",
+        "total_co2_kg": round(total_co2, 2),
+        "by_category": {k: round(v, 2) for k, v in totals.items()},
+        "suggestions": suggestions
+    }
