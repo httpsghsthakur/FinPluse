@@ -1,10 +1,12 @@
-from typing import Annotated
+﻿from typing import Annotated
 import os
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.db.session import get_db
+from app.db.models.user import User
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,23 +20,29 @@ async def get_current_user(
 ):
     token = credentials.credentials
     try:
-        # Supabase uses HS256 algorithm by default for JWTs
         payload = jwt.decode(
             token,
             SUPABASE_JWT_SECRET,
             algorithms=["HS256"],
             audience="authenticated",
-            options={"verify_aud": False} # Supabase aud is usually 'authenticated', but let's disable verify_aud to be safe
+            options={"verify_aud": False}
         )
         user_id = payload.get("sub")
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
         
-        # We can just return an object with id
-        class CurrentUser:
-            id = user_id
+        # Upsert user in db
+        user_res = await db.execute(select(User).where(User.id == user_id).limit(1))
+        db_user = user_res.scalars().first()
+        if not db_user:
+            email = payload.get("email", f"{user_id}@example.com")
+            # Create a placeholder name if not present
+            name = payload.get("user_metadata", {}).get("full_name", "Finpluse User")
+            db_user = User(id=user_id, email=email, name=name)
+            db.add(db_user)
+            await db.commit()
             
-        return CurrentUser()
+        return db_user
     except jwt.PyJWTError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
