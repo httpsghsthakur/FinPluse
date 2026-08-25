@@ -119,7 +119,15 @@ async def test_simulator_and_copilot(client: AsyncClient):
     assert "goalImpacts" in sim_data
 
     # Copilot Chat
-    chat_res = await client.post("/api/v1/copilot/chat", json={"message": "Can I afford a $500 flight?"})
+    from unittest.mock import AsyncMock, patch
+    with patch("app.api.v1.copilot.sql_agent.execute", new_callable=AsyncMock) as mock_execute:
+        mock_execute.return_value = {
+            "sql": "SELECT * FROM transactions",
+            "results": [{"amount": -500}],
+            "explanation": "Yes, you can afford it.",
+            "data_provenance": ["transactions"]
+        }
+        chat_res = await client.post("/api/v1/copilot/chat", json={"message": "Can I afford a $500 flight?"})
     assert chat_res.status_code == 200
     chat_data = chat_res.json()
     assert "content" in chat_data
