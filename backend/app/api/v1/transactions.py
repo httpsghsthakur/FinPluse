@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.db.models.transaction import Transaction
+from app.db.models.account import Account
 from app.ml.anomaly.ml_detectors import EnhancedIsolationForest
 from app.schemas.transaction import (
     TransactionResponse, TransactionCreate, TransactionUpdate,
@@ -191,7 +192,6 @@ async def import_csv(data: dict, db: AsyncSession = Depends(get_db), current_use
     acc_res = await db.execute(select(Account).where(Account.user_id == current_user.id).limit(1))
     account = acc_res.scalars().first()
     if not account:
-        from app.db.models.account import Account
         account = Account(id=f"acc-{current_user.id[:8]}", user_id=current_user.id, name="Default Account", type="checking", balance=0.0, currency="USD")
         db.add(account)
         await db.flush()
