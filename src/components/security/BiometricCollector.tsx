@@ -1,8 +1,8 @@
 ﻿import React, { useEffect, useRef } from 'react';
-import { useUserStore } from '../../lib/store/useUserStore';
+import { useAuth } from '../layout/AuthProvider';
 
 export const BiometricCollector: React.FC = () => {
-  const { profile: user } = useUserStore();
+  const { user } = useAuth();
   const typingCadence = useRef<number[]>([]);
   const mouseVelocity = useRef<number[]>([]);
   const lastKeyTime = useRef<number>(0);
@@ -44,7 +44,7 @@ export const BiometricCollector: React.FC = () => {
       if (typingCadence.current.length === 0 && mouseVelocity.current.length === 0) return;
       
       const payload = {
-        user_id: user.email,
+        user_id: user.id,
         session_id: "sess_" + Math.random().toString(36).substr(2, 9),
         typing_cadence: typingCadence.current.slice(-50), // keep last 50
         mouse_velocity: mouseVelocity.current.slice(-50),

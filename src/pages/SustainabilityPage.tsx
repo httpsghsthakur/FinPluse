@@ -1,9 +1,9 @@
 ﻿import React, { useEffect, useState } from 'react';
-import { useUserStore } from '../lib/store/useUserStore';
+import { useAuth } from '../components/layout/AuthProvider';
 
 
 export const SustainabilityPage: React.FC = () => {
-  const { profile: user } = useUserStore();
+  const { user } = useAuth();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
