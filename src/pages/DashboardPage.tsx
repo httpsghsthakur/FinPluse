@@ -54,6 +54,7 @@ export const DashboardPage: React.FC = () => {
     null,
   );
   const [isLoading, setIsLoading] = useState(true);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const loadDashboard = async () => {
     setIsLoading(true);

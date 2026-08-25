@@ -23,7 +23,7 @@ export class FederatedClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': Bearer \
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify(mockDeltas)
       });

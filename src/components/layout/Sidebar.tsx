@@ -26,14 +26,14 @@ const NAV_ITEMS = [
 ];
 
 export const Sidebar: React.FC = () => {
-  const { isSidebarOpen, toggleSidebar } = useUIStore();
+  const { isSidebarCollapsed, toggleSidebar } = useUIStore();
   const location = useLocation();
 
   return (
     <aside
       className={cn(
         'relative h-screen bg-[#000000] border-r border-white/[0.08] transition-all duration-300 flex flex-col',
-        isSidebarOpen ? 'w-64' : 'w-20'
+        !isSidebarCollapsed ? 'w-64' : 'w-20'
       )}
     >
       {/* Brand */}
@@ -42,7 +42,7 @@ export const Sidebar: React.FC = () => {
           <div className="w-8 h-8 bg-white flex items-center justify-center">
             <Activity className="w-5 h-5 text-black" strokeWidth={2.5} />
           </div>
-          {isSidebarOpen && (
+          {!isSidebarCollapsed && (
             <span className="font-mono text-sm font-bold tracking-widest text-white uppercase">
               Finpluse
             </span>
@@ -77,7 +77,7 @@ export const Sidebar: React.FC = () => {
                   isActive ? 'opacity-100' : 'opacity-50 group-hover:opacity-100'
                 )}
               />
-              {isSidebarOpen && (
+              {!isSidebarCollapsed && (
                 <span className="font-mono text-xs tracking-wider uppercase">
                   {item.name}
                 </span>
@@ -93,7 +93,7 @@ export const Sidebar: React.FC = () => {
           onClick={toggleSidebar}
           className="w-full flex items-center justify-center p-2 text-[#a1a1aa] hover:text-white hover:bg-white/[0.04] transition-colors"
         >
-          {isSidebarOpen ? (
+          {!isSidebarCollapsed ? (
             <ChevronLeft className="w-5 h-5" />
           ) : (
             <ChevronRight className="w-5 h-5" />
