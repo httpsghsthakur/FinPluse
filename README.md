@@ -2,6 +2,8 @@
 
 <div align="center">
 
+[![CI/CD Pipeline](https://img.shields.io/github/actions/workflow/status/httpsghsthakur/Finpluse/ci.yml?branch=main&label=CI%2FCD&style=for-the-badge&logo=githubactions)](https://github.com/httpsghsthakur/Finpluse/actions/workflows/ci.yml)
+[![Docker](https://img.shields.io/badge/Docker-GHCR-blue?style=for-the-badge&logo=docker)](https://github.com/httpsghsthakur/Finpluse/pkgs/container/finpluse)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?style=for-the-badge&logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-19.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)

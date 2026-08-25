@@ -64,3 +64,26 @@ Once Render finishes building:
 - 📊 **Simulator**: `https://<your-app-name>.onrender.com/simulator`
 - 📚 **Swagger API Docs**: `https://<your-app-name>.onrender.com/docs`
 - 🩺 **Health Check**: `https://<your-app-name>.onrender.com/health`
+
+---
+
+## Self-Hosting with Docker Compose
+
+Finpluse is packaged as a unified container and published to GitHub Container Registry (GHCR). You can easily run the app and its required PostgreSQL database on any server using Docker Compose.
+
+### 1. Requirements
+- Docker & Docker Compose installed.
+
+### 2. Run the Stack
+Simply run the following command in the directory containing docker-compose.yml:
+\\\ash
+docker-compose up -d
+\\\
+
+The stack will:
+1. Pull the official ghcr.io/httpsghsthakur/finpluse:latest image.
+2. Spin up a postgres:15-alpine database.
+3. Automatically connect the app to the database.
+
+### 3. Access the App
+Navigate to http://localhost:8000 in your browser. The single container serves both the React frontend and the FastAPI backend!
