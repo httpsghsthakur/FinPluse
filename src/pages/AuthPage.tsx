@@ -35,6 +35,7 @@ export const AuthPage: React.FC = () => {
           password,
           options: {
             data: { full_name: fullName },
+            emailRedirectTo: ${window.location.origin}/app,
           },
         });
         if (error) throw error;

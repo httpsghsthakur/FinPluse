@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { KpiCard } from "../components/ui/KpiCard";
 import { ChartCard } from "../components/ui/ChartCard";
+import { ShareInsightModal } from "../components/ui/ShareInsightModal";
 import { CategoryIcon } from "../components/ui/CategoryIcon";
 import { AmountText } from "../components/ui/AmountText";
 import { ProgressBar } from "../components/ui/ProgressBar";
@@ -564,6 +565,12 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
       </div>
+      <ShareInsightModal 
+        isOpen={shareOpen} 
+        onClose={() => setShareOpen(false)} 
+        title="Financial Milestone Achieved!" 
+        insight={I've maintained a positive cash flow with a liquid balance of  this month using Finpluse's AI forecasting!}
+      />
     </div>
   );
 };

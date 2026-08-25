@@ -1,6 +1,6 @@
-import React from "react";
-import { NavLink } from "react-router-dom";
-import { ArrowRight, Activity, Shield, Brain, BarChart3, LineChart } from "lucide-react";
+﻿import React from 'react';
+import { NavLink } from 'react-router-dom';
+import { Activity, Shield, Brain, BarChart3, LineChart } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
   return (
@@ -25,83 +25,80 @@ export const LandingPage: React.FC = () => {
       </nav>
 
       {/* Hero Section */}
-      <main className="pt-40 pb-20 px-6 max-w-7xl mx-auto relative">
-        {/* Subtle noise/gradient background */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-white/[0.02] rounded-full blur-[100px] pointer-events-none" />
-        
-        <div className="relative z-10 flex flex-col items-center text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.08] bg-white/[0.02] mb-8">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[11px] font-medium text-[#a1a1aa] uppercase tracking-widest">Finpluse is live</span>
+      <section className="pt-40 pb-32 px-6 relative">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-500/10 blur-[120px] rounded-full pointer-events-none" />
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] mb-8">
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+            <span className="text-xs font-medium text-[#a1a1aa]">Powered by Prophet & Isolation Forest</span>
           </div>
-          
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60 max-w-5xl mx-auto leading-[1.05]">
-            Intelligence for your capital.
+          <h1 className="text-5xl md:text-7xl font-medium tracking-tight mb-8 leading-[1.1] text-white">
+            Intelligence for your <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">
+              capital.
+            </span>
           </h1>
-          
-          <p className="mt-8 text-[#a1a1aa] text-lg md:text-xl max-w-2xl mx-auto font-light leading-relaxed">
-            Finpluse connects to your accounts and uses deterministic AI to model your cash flow, analyze anomalies, and project your 90-day runway. 
+          <p className="text-lg text-[#a1a1aa] mb-12 max-w-2xl mx-auto leading-relaxed">
+            Finpluse is a deterministic AI financial engine. We use mathematically verifiable models like Facebook Prophet and Enhanced Isolation Forests to understand your cash flow, with a Text-to-SQL RAG agent for zero-hallucination querying.
           </p>
-
-          <div className="mt-12 flex items-center gap-4">
-            <NavLink to="/app" className="group flex items-center gap-2 bg-white text-black px-6 py-3.5 rounded-full text-sm font-medium hover:bg-[#e5e5e5] transition-all">
-              Open Dashboard
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          <div className="flex items-center justify-center gap-4">
+            <NavLink to="/app" className="px-8 py-4 rounded-full bg-white text-black text-sm font-medium hover:bg-[#e5e5e5] transition-transform hover:scale-105 active:scale-95">
+              Start Building Wealth
             </NavLink>
           </div>
         </div>
+      </section>
 
-        {/* Bento Box Grid */}
-        <div className="mt-32 grid grid-cols-1 md:grid-cols-3 gap-4" id="features">
-          <div className="md:col-span-2 p-8 rounded-3xl bg-[#0a0a0a] border border-white/[0.04] relative overflow-hidden group hover:border-white/[0.08] transmition-colors">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[80px] group-hover:bg-emerald-500/20 transition-colors" />
-            <Brain className="w-8 h-8 text-[#ededed] mb-12" strokeWidth={1.5} />
-            <h3 className="text-2xl font-medium mb-3 text-white">Conversational AI Engine</h3>
-            <p className="text-[#a1a1aa] max-w-md font-light leading-relaxed">
-              Ask complex questions about your finances. Finpluse queries your real data and mathematically guarantees its answers. No hallucinations, just facts.
-            </p>
-          </div>
-          
-          <div className="p-8 rounded-3xl bg-[#0a0a0a] border border-white/[0.04] relative overflow-hidden group hover:border-white/[0.08] transition-colors">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-[60px] group-hover:bg-blue-500/20 transition-colors" />
-            <LineChart className="w-8 h-8 text-[#ededed] mb-12" strokeWidth={1.5} />
-            <h3 className="text-xl font-medium mb-3 text-white">90-Day Runway</h3>
-            <p className="text-[#a1a1aa] font-light leading-relaxed text-sm">
-              We project your recurring bills and income to forecast your future balance exactly.
-            </p>
-          </div>
-
-          <div className="p-8 rounded-3xl bg-[#0a0a0a] border border-white/[0.04] relative overflow-hidden group hover:border-white/[0.08] transition-colors">
-            <BarChart3 className="w-8 h-8 text-[#ededed] mb-12" strokeWidth={1.5} />
-            <h3 className="text-xl font-medium mb-3 text-white">Anomaly Detection</h3>
-            <p className="text-[#a1a1aa] font-light leading-relaxed text-sm">
-              Automatically flagged statistical spikes in category spending.
-            </p>
-          </div>
-
-          <div className="md:col-span-2 p-8 rounded-3xl bg-[#0a0a0a] border border-white/[0.04] relative overflow-hidden group hover:border-white/[0.08] transition-colors" id="security">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 blur-[80px] group-hover:bg-orange-500/20 transition-colors" />
-            <Shield className="w-8 h-8 text-[#ededed] mb-12" strokeWidth={1.5} />
-            <h3 className="text-2xl font-medium mb-3 text-white">Bank-Grade Privacy</h3>
-            <p className="text-[#a1a1aa] max-w-md font-light leading-relaxed">
-              Read-only connections. End-to-end encryption. Your data is analyzed locally on the server and never sold to third parties. We don't have access to move your money.
-            </p>
+      {/* Features Grid */}
+      <section id="features" className="py-24 px-6 border-t border-white/[0.04]">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="p-8 rounded-3xl bg-[#0a0a0a] border border-white/[0.04] group hover:border-white/[0.1] transition-colors relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[40px] rounded-full group-hover:bg-blue-500/10 transition-colors" />
+              <div className="w-12 h-12 rounded-xl bg-[#141414] border border-white/[0.08] flex items-center justify-center mb-6 relative z-10">
+                <Brain className="w-5 h-5 text-blue-400" />
+              </div>
+              <h3 className="text-lg font-medium text-white mb-3 relative z-10">Zero-Hallucination Copilot</h3>
+              <p className="text-sm text-[#a1a1aa] leading-relaxed relative z-10">
+                Our conversational engine uses LLMs strictly for intent parsing, translating queries into deterministic SQL with strict schema guardrails.
+              </p>
+            </div>
+            
+            <div className="p-8 rounded-3xl bg-[#0a0a0a] border border-white/[0.04] group hover:border-white/[0.1] transition-colors relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[40px] rounded-full group-hover:bg-indigo-500/10 transition-colors" />
+              <div className="w-12 h-12 rounded-xl bg-[#141414] border border-white/[0.08] flex items-center justify-center mb-6 relative z-10">
+                <LineChart className="w-5 h-5 text-indigo-400" />
+              </div>
+              <h3 className="text-lg font-medium text-white mb-3 relative z-10">Prophet Forecasting</h3>
+              <p className="text-sm text-[#a1a1aa] leading-relaxed relative z-10">
+                We utilize Facebook Prophet for time-series forecasting, capturing weekly seasonality and payday spikes to project your cash flow with mathematical confidence.
+              </p>
+            </div>
+            
+            <div className="p-8 rounded-3xl bg-[#0a0a0a] border border-white/[0.04] group hover:border-white/[0.1] transition-colors relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 blur-[40px] rounded-full group-hover:bg-rose-500/10 transition-colors" />
+              <div className="w-12 h-12 rounded-xl bg-[#141414] border border-white/[0.08] flex items-center justify-center mb-6 relative z-10">
+                <Shield className="w-5 h-5 text-rose-400" />
+              </div>
+              <h3 className="text-lg font-medium text-white mb-3 relative z-10">Isolation Forest Security</h3>
+              <p className="text-sm text-[#a1a1aa] leading-relaxed relative z-10">
+                Every transaction is scored by an Enhanced Isolation Forest model in real-time, detecting multi-dimensional spending anomalies with 100% test recall.
+              </p>
+            </div>
           </div>
         </div>
-      </main>
+      </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.04] mt-20">
-        <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row justify-between items-center gap-4">
+      <footer className="py-12 px-6 border-t border-white/[0.04]">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-[2px] bg-white flex items-center justify-center">
-              <Activity className="w-3 h-3 text-black" strokeWidth={4} />
-            </div>
-            <span className="text-xs font-bold tracking-tight text-white">Finpluse</span>
+            <Activity className="w-4 h-4 text-[#a1a1aa]" />
+            <span className="text-sm font-medium text-[#a1a1aa]">Finpluse AI</span>
           </div>
-          <div className="text-xs text-[#666] font-light">
-            © 2026 Finpluse AI.
-          </div>
+          <p className="text-xs text-[#52525b]">
+            Designed for engineers. Built for scale.
+          </p>
         </div>
       </footer>
     </div>
