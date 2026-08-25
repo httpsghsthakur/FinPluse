@@ -569,7 +569,7 @@ export const DashboardPage: React.FC = () => {
         isOpen={shareOpen} 
         onClose={() => setShareOpen(false)} 
         title="Financial Milestone Achieved!" 
-        insight={I've maintained a positive cash flow with a liquid balance of  this month using Finpluse's AI forecasting!}
+        insight={`I've maintained a positive cash flow with a liquid balance of ${data ? formatCurrency(data.liquid_capital) : '$0'} this month using Finpluse's AI forecasting!`}
       />
     </div>
   );

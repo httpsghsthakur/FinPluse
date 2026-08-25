@@ -49,7 +49,7 @@ export const Topbar: React.FC = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(/app/transactions?q= + encodeURIComponent(searchQuery));
+      navigate(`/app/transactions?q=` + encodeURIComponent(searchQuery));
     }
   };
 
