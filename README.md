@@ -173,7 +173,7 @@ npm install
 npm run dev
 ```
 
-Visit **http://localhost:3000** to explore the application!
+Visit **(https://finpaluse.onrender.com/)** to explore the application!
 
 ---
 
