@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.db.models.transaction import Transaction
 from app.db.models.account import Account
+from app.db.models.category import Category
 from app.ml.anomaly.ml_detectors import EnhancedIsolationForest
 from app.schemas.transaction import (
     TransactionResponse, TransactionCreate, TransactionUpdate,
@@ -197,6 +198,10 @@ async def import_csv(data: dict, db: AsyncSession = Depends(get_db), current_use
         await db.flush()
     account_id = account.id
 
+    # Cache valid categories
+    cat_res = await db.execute(select(Category.id).where(Category.user_id == current_user.id))
+    valid_categories = set(cat_res.scalars().all())
+
     for i, line in enumerate(lines):
         if i == 0:
             continue  # skip header
@@ -208,7 +213,20 @@ async def import_csv(data: dict, db: AsyncSession = Depends(get_db), current_use
                 amount = float(amount_str)
             except ValueError:
                 continue
-            tx = Transaction(
+                
+            # Ensure category exists
+            if cat_str and cat_str not in valid_categories:
+                new_cat = Category(
+                    id=cat_str,
+                    user_id=current_user.id,
+                    name=cat_str.replace("cat-", "").replace("-", " ").title(),
+                    type="expense",
+                    is_custom=True
+                )
+                db.add(new_cat)
+                valid_categories.add(cat_str)
+                
+            tx_obj = Transaction(
                 id=f"tx-import-{int(datetime.utcnow().timestamp() * 1000)}-{i}",
                 user_id=current_user.id,
                 date=date.fromisoformat(date_str) if date_str else date.today(),
@@ -219,7 +237,7 @@ async def import_csv(data: dict, db: AsyncSession = Depends(get_db), current_use
                 status="settled",
                 is_recurring=False,
             )
-            db.add(tx)
+            db.add(tx_obj)
             imported += 1
 
     await db.flush()
