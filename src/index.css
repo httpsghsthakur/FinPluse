@@ -1,15 +1,15 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 @layer base {
   :root {
     --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-    --font-mono: "JetBrains Mono", monospace;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
 
   body {
     font-family: var(--font-sans);
-    background-color: #0b0f19;
-    color: #f1f5f9;
+    background-color: #030303; /* Absolute or near absolute black */
+    color: #ededed;
   }
 
   .font-mono {
@@ -17,10 +17,10 @@
   }
 }
 
-/* Custom smooth scrollbars */
+/* Custom sharp scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -28,51 +28,56 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.15);
-  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0px; /* Sharp corners */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Tabular numbers for financial precision */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  letter-spacing: -0.5px;
 }
 
-/* Frosted Glass Theme Utilities */
+/* Stark Tactical Glass Utilities */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(51, 65, 85, 0.6);
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0px; /* Force sharp if applied directly */
 }
 
 .glass-panel-subtle {
-  background: rgba(15, 23, 42, 0.25);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(51, 65, 85, 0.4);
+  background: #050505;
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .glass-panel-accent {
-  background: rgba(99, 102, 241, 0.08);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: rgba(59, 130, 246, 0.05); /* Electric Blue hint */
+  border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .glass-panel-emerald {
-  background: rgba(16, 185, 129, 0.08);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.05); /* Terminal Green */
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
-.light .glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+.glass-panel-danger {
+  background: rgba(244, 63, 94, 0.05); /* Warning Red */
+  border: 1px solid rgba(244, 63, 94, 0.2);
+}
+
+/* Recharts overrides for tactical look */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: rgba(255, 255, 255, 0.05) !important;
+}
+
+.recharts-text {
+  fill: #a1a1aa !important;
+  font-family: var(--font-mono) !important;
+  font-size: 10px !important;
 }
