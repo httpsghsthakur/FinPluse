@@ -47,15 +47,14 @@ async def get_current_user(
             db.add(db_user)
             await db.flush()
 
-            # Automatically seed baseline categories & accounts for this new user
-            try:
-                from app.api.v1.admin import seed_database
-                await seed_database(db, db_user)
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).warning(f"Initial seed warning for user {user_id}: {e}")
-
+        # Ensure user has baseline categories & accounts (checks if already seeded, so safe for existing users)
+        try:
+            from app.api.v1.admin import seed_database
+            await seed_database(db, db_user)
             await db.commit()
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"User baseline seed check for {user_id}: {e}")
             
         return db_user
     except jwt.PyJWTError as e:

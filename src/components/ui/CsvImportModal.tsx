@@ -31,11 +31,11 @@ export const CsvImportModal: React.FC<{ onImported: () => void }> = ({
       setCsvContent("");
       closeCsvImportModal();
       onImported();
-    } catch (e) {
+    } catch (e: any) {
       showToast({
         type: "error",
         title: "Import Failed",
-        description: "Check your CSV format and column headers.",
+        description: e?.message || "Check your CSV format and column headers.",
       });
     } finally {
       setIsImporting(false);
