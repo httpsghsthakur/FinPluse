@@ -104,3 +104,9 @@ backend/data/processed/*.parquet
 !backend/data/**/.gitkeep
 backend/scratch/
 scratch/
+fix*
+patch*
+check_*.py
+print_*.py
+test_*.py
+!backend/tests/**
