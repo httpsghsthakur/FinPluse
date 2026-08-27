@@ -1,294 +1,142 @@
 import React, { useEffect, useState } from "react";
-import {
-  Target,
-  Plus,
-  Sparkles,
-  Calendar,
-  Zap,
-  TrendingUp,
-  CheckCircle2,
-  AlertCircle,
-  ArrowRight,
-  ShieldCheck,
-} from "lucide-react";
-import confetti from "canvas-confetti";
-import { Goal, Account } from "../types";
-import { CategoryIcon } from "../components/ui/CategoryIcon";
+import { NavLink } from "react-router-dom";
+import { Target, Plus, Calendar, ChevronRight, Bot, ArrowRight, Sparkles, TrendingUp, Zap } from "lucide-react";
+import { Goal, GoalBoost } from "../types";
 import { ProgressBar } from "../components/ui/ProgressBar";
+import { TableSkeleton } from "../components/ui/Skeletons";
 import { EmptyState } from "../components/ui/EmptyState";
-import { Modal } from "../components/ui/Modal";
 import { api } from "../lib/api";
 import { useUIStore } from "../lib/store/useUIStore";
+import { useUserStore } from "../lib/store/useUserStore";
 import { formatCurrency, formatDate } from "../lib/utils/formatters";
 
 export const GoalsPage: React.FC = () => {
   const { openCreateGoalModal, showToast } = useUIStore();
+  const { profile } = useUserStore();
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [boosts, setBoosts] = useState<GoalBoost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Contribute Modal State
-  const [contributeGoal, setContributeGoal] = useState<Goal | null>(null);
-  const [depositAmount, setDepositAmount] = useState("100");
-  const [isContributing, setIsContributing] = useState(false);
 
   const loadGoals = async () => {
     setIsLoading(true);
     try {
-      const [goalList, accList] = await Promise.all([
-        api.getGoals(),
-        api.getAccounts(),
-      ]);
-      setGoals(goalList);
-      setAccounts(accList);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoading(false);
-    }
+      const [gList, bList] = await Promise.all([api.getGoals(), api.getGoalBoosts()]);
+      setGoals(gList);
+      setBoosts(bList);
+    } catch (e) { console.error(e); }
+    finally { setIsLoading(false); }
   };
 
-  useEffect(() => {
-    loadGoals();
-  }, []);
+  useEffect(() => { loadGoals(); }, []);
 
-  const handleDeposit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!contributeGoal) return;
-    const amount = parseFloat(depositAmount);
-    if (isNaN(amount) || amount <= 0) return;
-
-    setIsContributing(true);
+  const handleApplyBoost = async (boost: GoalBoost) => {
     try {
-      const updated = await api.contributeToGoal(contributeGoal.id, amount);
-      if (updated.isCompleted) {
-        confetti({
-          particleCount: 120,
-          spread: 70,
-          origin: { y: 0.6 },
-        });
-        showToast({
-          type: "success",
-          title: "Goal Achieved! 🎉",
-          description: `Congratulations! You hit your target for ${updated.name}!`,
-        });
-      } else {
-        showToast({
-          type: "success",
-          title: "Contribution Recorded",
-          description: `Added ${formatCurrency(amount)} to ${updated.name}.`,
-        });
-      }
-      setContributeGoal(null);
+      await api.applyGoalBoost(boost.id);
+      showToast({ type: "success", title: "Boost Applied!", description: `${formatCurrency(boost.amount, profile.currency)} allocated from ${boost.source}.` });
       loadGoals();
-    } catch (err) {
-      showToast({
-        type: "error",
-        title: "Contribution Failed",
-      });
-    } finally {
-      setIsContributing(false);
-    }
+    } catch (e) { showToast({ type: "error", title: "Boost Failed" }); }
   };
 
-  const totalSavedAcrossGoals = goals.reduce(
-    (acc, g) => acc + g.currentAmount,
-    0,
-  );
-  const totalTargetAcrossGoals = goals.reduce(
-    (acc, g) => acc + g.targetAmount,
-    0,
-  );
-  const overallProgressPct = Math.round(
-    (totalSavedAcrossGoals / (totalTargetAcrossGoals || 1)) * 100,
-  );
+  const totalTarget = goals.reduce((s, g) => s + g.targetAmount, 0);
+  const totalSaved = goals.reduce((s, g) => s + g.currentAmount, 0);
+  const overallPct = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
+
+  if (isLoading) return <div className="space-y-6"><TableSkeleton rows={4} /></div>;
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fadeInUp">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
-            Savings Goals
-          </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Active milestone trajectories with dynamic completion forecasting
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-white font-display">Financial Goals</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Track savings targets with AI-powered allocation recommendations</p>
         </div>
-
-        <button
-          onClick={openCreateGoalModal}
-          className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.25)] transition-all cursor-pointer self-start"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>New Goal</span>
+        <button onClick={openCreateGoalModal} className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition-all cursor-pointer btn-glow">
+          <Plus className="w-4 h-4 stroke-[2.5]" /><span>Create Goal</span>
         </button>
       </div>
 
-      {/* Aggregate Goal Progress Banner */}
-      <div className="p-6 rounded-[28px] bg-slate-900/40 backdrop-blur-md border border-slate-800/60 shadow-[0_10px_30px_rgba(0,0,0,0.2)] flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-1">
-          <span className="text-xs font-mono uppercase text-emerald-400 font-bold tracking-wider">
-            Total Milestone Reserve
-          </span>
-          <div className="text-3xl font-extrabold font-mono text-white">
-            {formatCurrency(totalSavedAcrossGoals)}{" "}
-            <span className="text-sm text-slate-400 font-sans font-normal">
-              of {formatCurrency(totalTargetAcrossGoals)} ({overallProgressPct}
-              %)
-            </span>
+      {/* Overall Progress Banner */}
+      {goals.length > 0 && (
+        <div className="glass-card rounded-2xl p-6 space-y-4 animate-fadeInUp stagger-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs font-mono uppercase text-slate-400 font-semibold tracking-wider">Combined Goal Progress</span>
+              <div className="text-3xl font-bold font-mono text-white mt-1">{overallPct.toFixed(1)}%</div>
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-mono text-emerald-400">{formatCurrency(totalSaved, profile.currency)}</div>
+              <div className="text-xs text-slate-400">of {formatCurrency(totalTarget, profile.currency)}</div>
+            </div>
           </div>
-          <p className="text-xs text-slate-400">
-            Automating ~
-            {formatCurrency(
-              goals.reduce((a, b) => a + b.monthlyContribution, 0),
-            )}
-            /month across {goals.length} target pots.
-          </p>
+          <ProgressBar value={totalSaved} max={totalTarget} size="lg" color="#10B981" />
         </div>
+      )}
 
-        <div className="w-full md:w-64 space-y-2">
-          <div className="flex justify-between text-xs font-mono text-slate-300">
-            <span>Portfolio Progress</span>
-            <span className="text-emerald-400 font-bold">
-              {overallProgressPct}%
-            </span>
-          </div>
-          <ProgressBar
-            value={totalSavedAcrossGoals}
-            max={totalTargetAcrossGoals}
-            color="#10B981"
-            size="lg"
-          />
-        </div>
-      </div>
-
-      {/* Goal Cards Grid */}
       {goals.length === 0 ? (
-        <EmptyState
-          title="No Active Goals"
-          description="Create your first goal to unlock AI savings pacing and runway trajectory tracking."
-          actionLabel="Create Goal"
-          onAction={openCreateGoalModal}
-        />
+        <EmptyState title="No Goals Set" description="Create your first savings goal and let Finpluse AI track your progress." actionLabel="Create Goal" onAction={openCreateGoalModal} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {goals.map((goal) => {
-            const pct = Math.min(
-              100,
-              Math.round((goal.currentAmount / goal.targetAmount) * 100),
-            );
-            const remaining = Math.max(
-              0,
-              goal.targetAmount - goal.currentAmount,
-            );
-            const monthsToTarget = (
-              remaining / (goal.monthlyContribution || 100)
-            ).toFixed(1);
-            const isCompleted = goal.currentAmount >= goal.targetAmount;
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {goals.map((goal, i) => {
+            const pct = (goal.currentAmount / goal.targetAmount) * 100;
+            const goalBoosts = boosts.filter((b) => b.goalId === goal.id && !b.isApplied);
             return (
-              <div
-                key={goal.id}
-                className="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 hover:border-slate-700/80 rounded-[28px] p-6 transition-all duration-200 flex flex-col justify-between space-y-4 shadow-[0_10px_30px_rgba(0,0,0,0.2)]"
-              >
-                <div>
-                  {/* Card Header */}
+              <div key={goal.id} className="glass-card rounded-2xl p-5 space-y-4 group animate-fadeInUp" style={{ animationDelay: `${i * 0.08}s` }}>
+                {/* Hover gradient overlay */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-500/0 to-cyan-500/0 group-hover:from-emerald-500/[0.03] group-hover:to-cyan-500/[0.02] transition-all duration-500 pointer-events-none" />
+                
+                <div className="relative z-10 space-y-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <CategoryIcon
-                        name={goal.icon || "Target"}
-                        color={goal.color}
-                        size="lg"
-                      />
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                        <Target className="w-5 h-5" />
+                      </div>
                       <div>
-                        <h3 className="text-base font-bold text-white">
-                          {goal.name}
-                        </h3>
-                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-                          <span className="font-mono">
-                            {formatDate(goal.deadline, "MMM yyyy")}
+                        <h3 className="text-base font-bold text-white">{goal.name}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          {goal.priority && (
+                            <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${
+                              goal.priority === "high" ? "bg-rose-500/10 text-rose-300 border-rose-500/25" :
+                              goal.priority === "medium" ? "bg-amber-500/10 text-amber-300 border-amber-500/25" :
+                              "bg-slate-500/10 text-slate-300 border-slate-500/25"
+                            }`}>{goal.priority} Priority</span>
+                          )}
+                          <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />{formatDate(goal.targetDate, "MMM yyyy")}
                           </span>
-                          <span>•</span>
-                          <span className="capitalize">{goal.category}</span>
                         </div>
                       </div>
                     </div>
-
-                    <span
-                      className={`text-[11px] font-mono px-2 py-0.5 rounded-full border ${
-                        isCompleted
-                          ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 font-bold"
-                          : "bg-indigo-500/15 text-indigo-300 border-indigo-500/30"
-                      }`}
-                    >
-                      {isCompleted ? "Achieved 🎉" : "On Track"}
-                    </span>
-                  </div>
-
-                  {/* Progress & Target Details */}
-                  <div className="mt-5 space-y-2">
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-2xl font-bold font-mono text-white">
-                        {formatCurrency(goal.currentAmount)}
-                      </span>
-                      <span className="text-xs font-mono text-slate-400">
-                        Target: {formatCurrency(goal.targetAmount)} ({pct}%)
-                      </span>
-                    </div>
-
-                    <ProgressBar
-                      value={goal.currentAmount}
-                      max={goal.targetAmount}
-                      color={goal.color}
-                      size="md"
-                    />
-
-                    <div className="flex justify-between text-xs text-slate-400 pt-1 font-mono">
-                      <span>
-                        {formatCurrency(goal.monthlyContribution)}/mo
-                        auto-transfer
-                      </span>
-                      <span>ETA ~{monthsToTarget} months</span>
+                    <div className="text-right">
+                      <div className="text-xl font-bold font-mono text-white">{pct.toFixed(0)}%</div>
                     </div>
                   </div>
-                </div>
 
-                {/* AI Boost Suggestion Chip */}
-                {goal.boostSuggestion && !isCompleted && (
-                  <div className="p-3 rounded-2xl bg-indigo-950/30 backdrop-blur-md border border-indigo-500/30 text-xs flex items-start gap-2.5">
-                    <Sparkles className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <span className="font-semibold text-indigo-300">
-                        AI Trajectory Boost:{" "}
-                      </span>
-                      <span className="text-slate-300 text-[11px]">
-                        {goal.boostSuggestion}
-                      </span>
-                    </div>
+                  <ProgressBar value={goal.currentAmount} max={goal.targetAmount} size="md" color="#10B981" />
+                  
+                  <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
+                    <span>{formatCurrency(goal.currentAmount, profile.currency)} saved</span>
+                    <span>{formatCurrency(goal.targetAmount - goal.currentAmount, profile.currency)} remaining</span>
                   </div>
-                )}
 
-                {/* Card Action footer */}
-                <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between">
-                  <span className="text-[11px] text-slate-400">
-                    Linked to{" "}
-                    <span className="text-slate-300 font-medium">
-                      {accounts.find((a) => a.id === goal.linkedAccountId)
-                        ?.name || "Savings"}
-                    </span>
-                  </span>
-
-                  <button
-                    onClick={() => {
-                      setContributeGoal(goal);
-                      setDepositAmount("250");
-                    }}
-                    className="px-3.5 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 text-xs font-semibold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Zap className="w-3.5 h-3.5 fill-emerald-400" />
-                    <span>Quick Boost</span>
-                  </button>
+                  {/* AI Boost Suggestions */}
+                  {goalBoosts.length > 0 && (
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold flex items-center gap-1">
+                        <Zap className="w-3 h-3" /> AI Boost Suggestions
+                      </span>
+                      {goalBoosts.slice(0, 2).map((boost) => (
+                        <div key={boost.id} className="p-3 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/15 flex items-center justify-between gap-2 text-xs">
+                          <div>
+                            <span className="text-slate-200 font-medium">{boost.description}</span>
+                            <span className="text-emerald-400 font-mono font-bold ml-2">+{formatCurrency(boost.amount, profile.currency)}</span>
+                          </div>
+                          <button onClick={() => handleApplyBoost(boost)} className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[11px] rounded-lg transition-all cursor-pointer btn-glow shrink-0">
+                            Apply
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -296,62 +144,14 @@ export const GoalsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Contribute Modal */}
-      {contributeGoal && (
-        <Modal
-          isOpen={Boolean(contributeGoal)}
-          onClose={() => setContributeGoal(null)}
-          title={`Boost ${contributeGoal.name}`}
-          description="Make a one-time manual deposit from your primary checking"
-          maxWidth="sm"
-        >
-          <form onSubmit={handleDeposit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
-                Deposit Amount (₹)
-              </label>
-              <input
-                type="number"
-                step="10"
-                required
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              {["50", "100", "250", "500"].map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => setDepositAmount(preset)}
-                  className="flex-1 py-1.5 bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-mono text-slate-300 rounded-lg cursor-pointer"
-                >
-                  +₹{preset}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setContributeGoal(null)}
-                className="px-4 py-2 text-xs text-slate-400 hover:text-slate-200 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isContributing}
-                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs rounded-xl shadow-md shadow-emerald-500/10 cursor-pointer"
-              >
-                Confirm Transfer
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
+      {/* AI Copilot CTA */}
+      <div className="glass-card-accent rounded-2xl p-5 space-y-2 animate-fadeInUp">
+        <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm"><Bot className="w-4 h-4" /><span>Goal Intelligence</span></div>
+        <p className="text-xs text-slate-300">Ask Copilot to analyze your spending and identify optimal allocation strategies for your goals.</p>
+        <NavLink to="/app/copilot" className="inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 font-semibold transition-colors group">
+          <span>Optimize My Goals</span><ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+        </NavLink>
+      </div>
     </div>
   );
 };

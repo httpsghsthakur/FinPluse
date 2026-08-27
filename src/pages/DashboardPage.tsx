@@ -13,7 +13,6 @@ import {
   ChevronRight,
   Bot,
   Plus,
-  RefreshCw,
 } from "lucide-react";
 import { KpiCard } from "../components/ui/KpiCard";
 import { ChartCard } from "../components/ui/ChartCard";
@@ -50,9 +49,7 @@ export const DashboardPage: React.FC = () => {
   const { profile } = useUserStore();
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [insights, setInsights] = useState<Insight[]>([]);
-  const [expandedInsightId, setExpandedInsightId] = useState<string | null>(
-    null,
-  );
+  const [expandedInsightId, setExpandedInsightId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -103,11 +100,13 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Low-Balance Alert Banner if active */}
+      {/* ═══ Low-Balance Alert Banner ═══ */}
       {data.lowBalanceAlert.hasLowBalance && (
-        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-4">
+        <div className="p-4 rounded-xl glass-card-danger flex items-center justify-between gap-4 animate-fadeInDown">
           <div className="flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+            <div className="p-2 rounded-lg bg-amber-500/15 border border-amber-500/25">
+              <AlertTriangle className="w-4 h-4 text-amber-400" />
+            </div>
             <div className="text-xs">
               <span className="font-bold text-amber-300">
                 Low Balance Forecast Warning:{" "}
@@ -124,14 +123,14 @@ export const DashboardPage: React.FC = () => {
           </div>
           <NavLink
             to="/app/forecast"
-            className="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-semibold hover:bg-amber-400 transition-colors shrink-0"
+            className="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 text-xs font-bold hover:bg-amber-400 transition-all shrink-0 btn-glow"
           >
             Review Forecast
           </NavLink>
         </div>
       )}
 
-      {/* 4 KPI Cards */}
+      {/* ═══ 4 KPI Cards — Staggered entrance ═══ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           title="Net Worth"
@@ -140,6 +139,7 @@ export const DashboardPage: React.FC = () => {
           changePeriodText="MoM"
           icon={Wallet}
           badge={{ text: "Compounding", variant: "emerald" }}
+          delay={0}
         />
         <KpiCard
           title="Monthly Spend"
@@ -147,6 +147,7 @@ export const DashboardPage: React.FC = () => {
           changePct={data.monthlySpendVsBudgetPct}
           changePeriodText={`vs Budget (${formatCurrency(data.monthlyBudgetTotal, profile.currency)})`}
           icon={CreditCard}
+          delay={80}
         />
         <KpiCard
           title="Cash Runway"
@@ -156,6 +157,7 @@ export const DashboardPage: React.FC = () => {
           subtext="Liquid checking + HYSA reserves"
           icon={Clock}
           badge={{ text: "Safe Tier", variant: "emerald" }}
+          delay={160}
         />
         <KpiCard
           title="Savings Rate"
@@ -165,12 +167,13 @@ export const DashboardPage: React.FC = () => {
           changePct={data.savingsRateMomDelta}
           changePeriodText="vs last month"
           icon={PiggyBank}
+          delay={240}
         />
       </div>
 
-      {/* Main Charts Row: Cash Flow History & Spending Breakdown */}
+      {/* ═══ Main Charts Row ═══ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Cash Flow Area Chart (6 Months) */}
+        {/* Cash Flow Area Chart */}
         <div className="lg:col-span-2">
           <ChartCard
             title="Cash Flow Dynamics"
@@ -196,87 +199,48 @@ export const DashboardPage: React.FC = () => {
                 >
                   <defs>
                     <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="5%"
-                        stopColor="#10B981"
-                        stopOpacity={0.35}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="#10B981"
-                        stopOpacity={0.0}
-                      />
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
                     </linearGradient>
-                    <linearGradient
-                      id="expenseGrad"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.3} />
-                      <stop
-                        offset="95%"
-                        stopColor="#F43F5E"
-                        stopOpacity={0.0}
-                      />
+                    <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#F43F5E" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
-                  <XAxis
-                    dataKey="month"
-                    stroke="#64748B"
-                    fontSize={11}
-                    tickLine={false}
-                  />
+                  <XAxis dataKey="month" stroke="#64748B" fontSize={11} tickLine={false} />
                   <YAxis
                     stroke="#64748B"
                     fontSize={11}
                     tickLine={false}
-                    tickFormatter={(v) =>
-                      `${CURRENCY_SYMBOLS[profile.currency] || "₹"}${v / 1000}k`
-                    }
+                    tickFormatter={(v) => `${CURRENCY_SYMBOLS[profile.currency] || "₹"}${v / 1000}k`}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#0F172A",
-                      borderColor: "#334155",
+                      backgroundColor: "#0a0a0a",
+                      borderColor: "rgba(255,255,255,0.08)",
                       borderRadius: 12,
+                      backdropFilter: "blur(12px)",
                     }}
                     formatter={(val: any) => [
                       `${CURRENCY_SYMBOLS[profile.currency] || "₹"}${Number(val).toLocaleString()}`,
                       "",
                     ]}
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="income"
-                    stroke="#10B981"
-                    strokeWidth={2.5}
-                    fill="url(#incomeGrad)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="expenses"
-                    stroke="#F43F5E"
-                    strokeWidth={2.5}
-                    fill="url(#expenseGrad)"
-                  />
+                  <Area type="monotone" dataKey="income" stroke="#10B981" strokeWidth={2.5} fill="url(#incomeGrad)" />
+                  <Area type="monotone" dataKey="expenses" stroke="#F43F5E" strokeWidth={2.5} fill="url(#expenseGrad)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </ChartCard>
         </div>
 
-        {/* Spending by Category Donut & Top List */}
+        {/* Spending by Category Donut */}
         <div className="lg:col-span-1">
           <ChartCard
             title="Spending by Category"
             subtitle="Current billing cycle distribution"
             actions={
-              <NavLink
-                to="/app/budgets"
-                className="text-xs text-emerald-400 hover:underline"
-              >
+              <NavLink to="/app/budgets" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors font-semibold">
                 View Budgets
               </NavLink>
             }
@@ -287,8 +251,8 @@ export const DashboardPage: React.FC = () => {
                   <PieChart>
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#0F172A",
-                        borderColor: "#334155",
+                        backgroundColor: "#0a0a0a",
+                        borderColor: "rgba(255,255,255,0.08)",
                         borderRadius: 12,
                       }}
                       formatter={(val: any) => [
@@ -314,28 +278,20 @@ export const DashboardPage: React.FC = () => {
                 </ResponsiveContainer>
               </div>
 
-              {/* Top 4 categories breakdown */}
+              {/* Top categories breakdown */}
               <div className="space-y-2">
                 {data.categorySpend.slice(0, 4).map((cat) => (
                   <div key={cat.categoryId} className="text-xs space-y-1">
                     <div className="flex justify-between items-center text-slate-300">
                       <span className="flex items-center gap-1.5 truncate">
-                        <span
-                          className="w-2 h-2 rounded-full shrink-0"
-                          style={{ backgroundColor: cat.color }}
-                        />
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
                         <span className="truncate">{cat.categoryName}</span>
                       </span>
                       <span className="font-mono font-medium">
                         {formatCurrency(cat.amount, profile.currency)}
                       </span>
                     </div>
-                    <ProgressBar
-                      value={cat.amount}
-                      max={cat.budget || cat.amount}
-                      color={cat.color}
-                      size="sm"
-                    />
+                    <ProgressBar value={cat.amount} max={cat.budget || cat.amount} color={cat.color} size="sm" />
                   </div>
                 ))}
               </div>
@@ -344,8 +300,8 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* AI Insights Chips Card */}
-      <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 rounded-[28px] p-5 md:p-6 space-y-4 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+      {/* ═══ AI Insights Card ═══ */}
+      <div className="glass-card rounded-2xl p-5 md:p-6 space-y-4 animate-fadeInUp">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -362,7 +318,7 @@ export const DashboardPage: React.FC = () => {
           </div>
           <NavLink
             to="/app/insights"
-            className="text-xs font-semibold text-emerald-400 hover:underline flex items-center gap-1"
+            className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors"
           >
             <span>Full Insights Feed</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -370,20 +326,20 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {insights.map((insight) => {
+          {insights.map((insight, idx) => {
             const isExpanded = expandedInsightId === insight.id;
             const borderColors = {
-              alert: "border-rose-500/30 bg-rose-950/20 backdrop-blur-sm",
-              warning: "border-amber-500/30 bg-amber-950/20 backdrop-blur-sm",
-              success:
-                "border-emerald-500/30 bg-emerald-950/20 backdrop-blur-sm",
-              info: "border-indigo-500/30 bg-indigo-950/20 backdrop-blur-sm",
+              alert: "border-rose-500/25 bg-rose-950/15",
+              warning: "border-amber-500/25 bg-amber-950/15",
+              success: "border-emerald-500/25 bg-emerald-950/15",
+              info: "border-indigo-500/25 bg-indigo-950/15",
             };
 
             return (
               <div
                 key={insight.id}
-                className={`p-4 rounded-2xl border transition-all ${borderColors[insight.severity]} space-y-2`}
+                className={`p-4 rounded-xl border transition-all duration-300 ${borderColors[insight.severity]} space-y-2 animate-fadeInUp hover:translate-y-[-2px]`}
+                style={{ animationDelay: `${idx * 0.08}s` }}
               >
                 <div className="flex items-start justify-between gap-2">
                   <h4 className="text-xs font-bold text-slate-200 leading-snug">
@@ -396,17 +352,15 @@ export const DashboardPage: React.FC = () => {
 
                 <div className="pt-1 flex items-center justify-between text-xs">
                   <button
-                    onClick={() =>
-                      setExpandedInsightId(isExpanded ? null : insight.id)
-                    }
-                    className="text-[11px] text-emerald-400 hover:underline font-medium cursor-pointer"
+                    onClick={() => setExpandedInsightId(isExpanded ? null : insight.id)}
+                    className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium cursor-pointer transition-colors"
                   >
                     {isExpanded ? "Hide explanation" : "Why this alert?"}
                   </button>
                   {insight.actionPath && (
                     <NavLink
                       to={insight.actionPath}
-                      className="text-[11px] text-slate-300 hover:text-white flex items-center gap-0.5"
+                      className="text-[11px] text-slate-300 hover:text-white flex items-center gap-0.5 transition-colors"
                     >
                       <span>{insight.actionLabel || "View"}</span>
                       <ArrowRight className="w-3 h-3" />
@@ -415,7 +369,7 @@ export const DashboardPage: React.FC = () => {
                 </div>
 
                 {isExpanded && (
-                  <div className="mt-2 p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 text-[11px] text-slate-300 space-y-2 animate-fadeIn">
+                  <div className="mt-2 p-2.5 bg-white/[0.03] rounded-lg border border-white/[0.06] text-[11px] text-slate-300 space-y-2 animate-fadeIn">
                     <div>{insight.whyExplanation}</div>
                     <CitationChip groundedData={insight.groundedData} />
                   </div>
@@ -426,31 +380,29 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Bottom Grid: Recent Transactions & Upcoming Bills */}
+      {/* ═══ Recent Transactions & Upcoming Bills ═══ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Transactions Table */}
-        <div className="lg:col-span-2 bg-slate-900/40 backdrop-blur-md border border-slate-800/60 rounded-[28px] p-5 md:p-6 space-y-4 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+        <div className="lg:col-span-2 glass-card rounded-2xl p-5 md:p-6 space-y-4 animate-fadeInUp">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-slate-100">
+              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <span className="w-1 h-4 bg-indigo-500 rounded-full opacity-60" />
                 Recent Transactions
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-400 ml-3">
                 Real-time sync across connected accounts
               </p>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={openAddTxModal}
-                className="px-2.5 py-1 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 text-slate-200 text-xs font-semibold border border-slate-700/50 flex items-center gap-1 cursor-pointer"
+                className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 text-xs font-semibold border border-white/[0.06] flex items-center gap-1 cursor-pointer transition-all"
               >
                 <Plus className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Add</span>
               </button>
-              <NavLink
-                to="/app/transactions"
-                className="text-xs text-emerald-400 hover:underline"
-              >
+              <NavLink to="/app/transactions" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors font-semibold">
                 View All
               </NavLink>
             </div>
@@ -459,26 +411,27 @@ export const DashboardPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-800/80 text-slate-400 uppercase font-mono text-[10px]">
+                <tr className="border-b border-white/[0.06] text-slate-400 uppercase font-mono text-[10px]">
                   <th className="pb-2.5 font-semibold">Merchant</th>
                   <th className="pb-2.5 font-semibold">Date</th>
                   <th className="pb-2.5 font-semibold">Category</th>
                   <th className="pb-2.5 font-semibold text-right">Amount</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/50">
-                {data.recentTransactions.map((tx) => (
+              <tbody className="divide-y divide-white/[0.04]">
+                {data.recentTransactions.map((tx, i) => (
                   <tr
                     key={tx.id}
                     onClick={() => openTxDetail(tx.id)}
-                    className="hover:bg-slate-800/30 transition-colors cursor-pointer group"
+                    className="hover:bg-white/[0.03] transition-all cursor-pointer group animate-fadeInUp"
+                    style={{ animationDelay: `${i * 0.04}s` }}
                   >
                     <td className="py-2.5 pr-3">
                       <div className="font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors truncate max-w-[180px]">
                         {tx.merchant}
                       </div>
                       {tx.isAnomaly && (
-                        <span className="inline-block text-[9px] font-mono px-1 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                        <span className="inline-block text-[9px] font-mono px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/25 animate-pulse-glow">
                           Anomaly
                         </span>
                       )}
@@ -499,31 +452,30 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Upcoming Bills (Next 14 Days) */}
-        <div className="lg:col-span-1 bg-slate-900/40 backdrop-blur-md border border-slate-800/60 rounded-[28px] p-5 md:p-6 space-y-4 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+        {/* Upcoming Bills */}
+        <div className="lg:col-span-1 glass-card rounded-2xl p-5 md:p-6 space-y-4 animate-fadeInUp stagger-2">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-slate-100">
+              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <span className="w-1 h-4 bg-amber-500 rounded-full opacity-60" />
                 Upcoming Bills
               </h3>
-              <p className="text-xs text-slate-400">Next 14 days auto-debits</p>
+              <p className="text-xs text-slate-400 ml-3">Next 14 days auto-debits</p>
             </div>
-            <NavLink
-              to="/app/forecast"
-              className="text-xs text-emerald-400 hover:underline"
-            >
+            <NavLink to="/app/forecast" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors font-semibold">
               Forecast
             </NavLink>
           </div>
 
           <div className="space-y-3">
-            {data.upcomingBills.map((bill) => (
+            {data.upcomingBills.map((bill, i) => (
               <div
                 key={bill.id}
-                className="p-3 rounded-2xl bg-slate-800/30 border border-slate-700/40 flex items-center justify-between gap-3"
+                className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:border-white/[0.08] flex items-center justify-between gap-3 transition-all duration-200 animate-fadeInUp"
+                style={{ animationDelay: `${i * 0.06}s` }}
               >
                 <div className="flex items-center gap-2.5 truncate">
-                  <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shrink-0">
+                  <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shrink-0">
                     <Calendar className="w-4 h-4" />
                   </div>
                   <div className="truncate">
@@ -547,7 +499,7 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* Ask Copilot Mini Card */}
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/30 to-teal-950/30 border border-emerald-500/25 text-xs space-y-2 backdrop-blur-sm">
+          <div className="p-4 rounded-xl glass-card-accent text-xs space-y-2">
             <div className="flex items-center gap-2 text-emerald-400 font-semibold">
               <Bot className="w-4 h-4" />
               <span>Need help planning cash flow?</span>
@@ -558,10 +510,10 @@ export const DashboardPage: React.FC = () => {
             </p>
             <NavLink
               to="/app/copilot"
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 hover:underline pt-1"
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 pt-1 transition-colors group"
             >
               <span>Ask AI Copilot</span>
-              <ArrowRight className="w-3 h-3" />
+              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
             </NavLink>
           </div>
         </div>

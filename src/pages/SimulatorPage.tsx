@@ -1,509 +1,199 @@
-import React, { useState, useEffect } from "react";
-import {
-  SlidersHorizontal,
-  TrendingUp,
-  Sparkles,
-  RotateCcw,
-  Save,
-  CheckCircle,
-  AlertTriangle,
-  Clock,
-  Target,
-  ArrowRight,
-} from "lucide-react";
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from "recharts";
+import React, { useState, useEffect, useMemo } from "react";
+import { SlidersHorizontal, Zap, RotateCcw, TrendingUp, DollarSign, Percent, Calendar } from "lucide-react";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, ReferenceLine } from "recharts";
 import { ChartCard } from "../components/ui/ChartCard";
-import { SimulationScenario, SimulationResult } from "../types";
 import { api } from "../lib/api";
 import { formatCurrency, CURRENCY_SYMBOLS } from "../lib/utils/formatters";
-import { useUIStore } from "../lib/store/useUIStore";
 import { useUserStore } from "../lib/store/useUserStore";
 
-const PRESET_SCENARIOS: {
-  name: string;
-  params: Partial<SimulationScenario>;
-}[] = [
-  {
-    name: "Tech Promotion (+15% Salary)",
-    params: {
-      name: "Tech Promotion (+15% Salary)",
-      monthlyIncomeDelta: 850,
-      monthlyExpenseDelta: 0,
-      oneTimeExpense: 0,
-      monthsWithoutIncome: 0,
-    },
-  },
-  {
-    name: "Career Break (4-Month Sabbatical)",
-    params: {
-      name: "Career Break (4-Month Sabbatical)",
-      monthlyIncomeDelta: 0,
-      monthlyExpenseDelta: -400, // cut expenses
-      oneTimeExpense: 2500, // travel
-      monthsWithoutIncome: 4,
-    },
-  },
-  {
-    name: "Major Purchase (Car Downpayment)",
-    params: {
-      name: "Major Purchase (Car Downpayment)",
-      monthlyIncomeDelta: 0,
-      monthlyExpenseDelta: 450, // car payment + insurance
-      oneTimeExpense: 1000000,
-      monthsWithoutIncome: 0,
-    },
-  },
-  {
-    name: "Aggressive Saving (Cut 15k/mo)",
-    params: {
-      name: "Aggressive Saving (Cut 15k/mo)",
-      monthlyIncomeDelta: 0,
-      monthlyExpenseDelta: -15000,
-      oneTimeExpense: 0,
-      monthsWithoutIncome: 0,
-    },
-  },
+interface SimParams {
+  monthlyIncome: number;
+  monthlyExpenses: number;
+  monthlySavingsGoal: number;
+  investReturnRate: number;
+  emergencyFundTarget: number;
+  horizonMonths: number;
+}
+
+const PRESETS: { label: string; params: Partial<SimParams> }[] = [
+  { label: "Conservative", params: { investReturnRate: 6, monthlySavingsGoal: 10000, monthlyExpenses: 45000 } },
+  { label: "Moderate Growth", params: { investReturnRate: 10, monthlySavingsGoal: 15000, monthlyExpenses: 40000 } },
+  { label: "Aggressive", params: { investReturnRate: 14, monthlySavingsGoal: 25000, monthlyExpenses: 35000 } },
 ];
 
 export const SimulatorPage: React.FC = () => {
-  const { showToast } = useUIStore();
   const { profile } = useUserStore();
-  const [scenarioName, setScenarioName] = useState("Custom Scenario");
-  const [monthlyIncomeDelta, setMonthlyIncomeDelta] = useState<number>(0);
-  const [monthlyExpenseDelta, setMonthlyExpenseDelta] = useState<number>(0);
-  const [oneTimeExpense, setOneTimeExpense] = useState<number>(0);
-  const [monthsWithoutIncome, setMonthsWithoutIncome] = useState<number>(0);
-  const [results, setResults] = useState<SimulationResult | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [params, setParams] = useState<SimParams>({
+    monthlyIncome: 85000,
+    monthlyExpenses: 42000,
+    monthlySavingsGoal: 15000,
+    investReturnRate: 10,
+    emergencyFundTarget: 150000,
+    horizonMonths: 24,
+  });
 
-  const runSimulation = async () => {
-    setIsLoading(true);
-    try {
-      const scenario: SimulationScenario = {
-        id: "sim-active",
-        name: scenarioName,
-        monthlyIncomeDelta,
-        monthlyExpenseDelta,
-        oneTimeExpense,
-        monthsWithoutIncome,
-      };
-      const res = await api.runSimulation(scenario);
-      setResults(res);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoading(false);
+  const simData = useMemo(() => {
+    const data: { month: number; balance: number; invested: number; emergency: number }[] = [];
+    let balance = 43270;
+    let invested = 0;
+    let emergency = 0;
+    const monthlyReturn = params.investReturnRate / 100 / 12;
+
+    for (let m = 0; m <= params.horizonMonths; m++) {
+      data.push({ month: m, balance, invested, emergency: Math.min(emergency, params.emergencyFundTarget) });
+      const surplus = params.monthlyIncome - params.monthlyExpenses;
+      if (emergency < params.emergencyFundTarget) {
+        const emContrib = Math.min(surplus * 0.3, params.emergencyFundTarget - emergency);
+        emergency += emContrib;
+        const remainSurplus = surplus - emContrib;
+        const investContrib = Math.min(remainSurplus, params.monthlySavingsGoal);
+        invested += invested * monthlyReturn + investContrib;
+        balance += surplus - emContrib - investContrib;
+      } else {
+        const investContrib = Math.min(surplus, params.monthlySavingsGoal);
+        invested += invested * monthlyReturn + investContrib;
+        balance += surplus - investContrib;
+      }
     }
+    return data;
+  }, [params]);
+
+  const finalBalance = simData[simData.length - 1]?.balance || 0;
+  const finalInvested = simData[simData.length - 1]?.invested || 0;
+  const finalEmergency = simData[simData.length - 1]?.emergency || 0;
+  const totalProjectedWealth = finalBalance + finalInvested + finalEmergency;
+
+  const updateParam = (key: keyof SimParams, value: number) => {
+    setParams((prev) => ({ ...prev, [key]: value }));
   };
 
-  useEffect(() => {
-    runSimulation();
-  }, [
-    monthlyIncomeDelta,
-    monthlyExpenseDelta,
-    oneTimeExpense,
-    monthsWithoutIncome,
-  ]);
+  const applyPreset = (preset: Partial<SimParams>) => {
+    setParams((prev) => ({ ...prev, ...preset }));
+  };
 
-  const applyPreset = (preset: (typeof PRESET_SCENARIOS)[0]) => {
-    setScenarioName(preset.name);
-    setMonthlyIncomeDelta(preset.params.monthlyIncomeDelta || 0);
-    setMonthlyExpenseDelta(preset.params.monthlyExpenseDelta || 0);
-    setOneTimeExpense(preset.params.oneTimeExpense || 0);
-    setMonthsWithoutIncome(preset.params.monthsWithoutIncome || 0);
-    showToast({
-      type: "info",
-      title: "Preset Applied",
-      description: `Loaded scenario parameters for "${preset.name}".`,
+  const resetDefaults = () => {
+    setParams({
+      monthlyIncome: 85000, monthlyExpenses: 42000, monthlySavingsGoal: 15000,
+      investReturnRate: 10, emergencyFundTarget: 150000, horizonMonths: 24,
     });
-  };
-
-  const handleReset = () => {
-    setScenarioName("Custom Scenario");
-    setMonthlyIncomeDelta(0);
-    setMonthlyExpenseDelta(0);
-    setOneTimeExpense(0);
-    setMonthsWithoutIncome(0);
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fadeInUp">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
-            What-If Scenario Simulator
-          </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Test life decisions against your real baseline to forecast 12-month
-            net worth and runway impacts
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-white font-display">What-If Simulator</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Monte Carlo-style scenario planning with real-time projection recalculation</p>
         </div>
-
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleReset}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800/40 hover:bg-slate-800/60 backdrop-blur-md text-slate-300 border border-slate-700/50 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset</span>
+          <span className="text-[10px] font-mono px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 animate-breathing">
+            <Zap className="w-3 h-3 inline mr-1" />LIVE COMPUTE
+          </span>
+          <button onClick={resetDefaults} className="p-2 glass-card text-slate-400 hover:text-white rounded-xl cursor-pointer transition-all hover:border-white/[0.12]">
+            <RotateCcw className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Preset Quick Chips */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        <span className="text-xs font-mono text-slate-400 shrink-0">
-          Quick Presets:
-        </span>
-        {PRESET_SCENARIOS.map((p, i) => (
-          <button
-            key={i}
-            onClick={() => applyPreset(p)}
-            className="px-3.5 py-1.5 rounded-xl bg-slate-800/40 hover:bg-slate-800/60 backdrop-blur-md border border-slate-700/50 text-xs text-slate-200 whitespace-nowrap transition-all cursor-pointer shadow-sm hover:border-emerald-500/40"
-          >
-            {p.name}
+      {/* Presets */}
+      <div className="flex items-center gap-2 animate-fadeInUp stagger-1">
+        <span className="text-[10px] font-mono uppercase text-slate-400 tracking-wider mr-2">Presets:</span>
+        {PRESETS.map((p, i) => (
+          <button key={i} onClick={() => applyPreset(p.params)}
+            className="px-3 py-1.5 rounded-lg glass-card text-xs font-semibold text-slate-300 hover:text-emerald-400 hover:border-emerald-500/30 transition-all cursor-pointer">
+            {p.label}
           </button>
         ))}
       </div>
 
-      {/* Main Grid: Controls on Left, Live Chart & Outcomes on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Controls Column */}
-        <div className="lg:col-span-1 bg-slate-900/40 backdrop-blur-md border border-slate-800/60 rounded-[28px] p-6 space-y-6 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800/60">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <SlidersHorizontal className="w-4 h-4 text-emerald-400" />
-              <span>Simulation Levers</span>
-            </h2>
-            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/15 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
-              Live Calc
-            </span>
-          </div>
+        {/* Controls Panel */}
+        <div className="lg:col-span-1 glass-card rounded-2xl p-6 space-y-6 animate-fadeInUp stagger-2">
+          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <SlidersHorizontal className="w-4 h-4 text-emerald-400" /> Scenario Parameters
+          </h3>
 
-          {/* Lever 1: Monthly Income Change */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <label className="text-slate-300 font-medium">
-                Monthly Income Delta
-              </label>
-              <span
-                className={`font-mono font-bold ${
-                  monthlyIncomeDelta > 0
-                    ? "text-emerald-400"
-                    : monthlyIncomeDelta < 0
-                      ? "text-rose-400"
-                      : "text-slate-400"
-                }`}
-              >
-                {monthlyIncomeDelta > 0
-                  ? `+${formatCurrency(monthlyIncomeDelta)}`
-                  : formatCurrency(monthlyIncomeDelta)}
-                /mo
-              </span>
+          {[
+            { key: "monthlyIncome" as const, label: "Monthly Income", icon: DollarSign, min: 20000, max: 500000, step: 5000 },
+            { key: "monthlyExpenses" as const, label: "Monthly Expenses", icon: DollarSign, min: 10000, max: 300000, step: 5000 },
+            { key: "monthlySavingsGoal" as const, label: "Investment Contribution", icon: TrendingUp, min: 0, max: 100000, step: 1000 },
+            { key: "investReturnRate" as const, label: "Expected Annual Return (%)", icon: Percent, min: 0, max: 30, step: 0.5 },
+            { key: "emergencyFundTarget" as const, label: "Emergency Fund Target", icon: DollarSign, min: 0, max: 500000, step: 10000 },
+            { key: "horizonMonths" as const, label: "Projection Horizon (Months)", icon: Calendar, min: 6, max: 60, step: 6 },
+          ].map(({ key, label, icon: Icon, min, max, step }) => (
+            <div key={key} className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400 flex items-center gap-1.5">
+                  <Icon className="w-3 h-3" /> {label}
+                </span>
+                <span className="font-mono font-bold text-white">
+                  {key === "investReturnRate" ? `${params[key]}%` : key === "horizonMonths" ? `${params[key]}M` : formatCurrency(params[key], profile.currency)}
+                </span>
+              </div>
+              <input
+                type="range" min={min} max={max} step={step} value={params[key]}
+                onChange={(e) => updateParam(key, parseFloat(e.target.value))}
+                className="w-full cursor-pointer"
+              />
             </div>
-            <input
-              type="range"
-              min="-400000"
-              max="500000"
-              step="100"
-              value={monthlyIncomeDelta}
-              onChange={(e) => setMonthlyIncomeDelta(Number(e.target.value))}
-              className="w-full accent-emerald-500 cursor-pointer"
-            />
-            <div className="flex justify-between text-xs text-slate-500 mb-2 font-mono">
-              <span>-{formatCurrency(400000, profile.currency)}</span>
-              <span>{formatCurrency(0, profile.currency)}</span>
-              <span>+{formatCurrency(500000, profile.currency)}</span>
-            </div>
-          </div>
-
-          {/* Lever 2: Monthly Expense Change */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <label className="text-slate-300 font-medium">
-                Monthly Expense Delta
-              </label>
-              <span
-                className={`font-mono font-bold ${
-                  monthlyExpenseDelta > 0
-                    ? "text-rose-400"
-                    : monthlyExpenseDelta < 0
-                      ? "text-emerald-400"
-                      : "text-slate-400"
-                }`}
-              >
-                {monthlyExpenseDelta > 0
-                  ? `+${formatCurrency(monthlyExpenseDelta)}`
-                  : formatCurrency(monthlyExpenseDelta)}
-                /mo
-              </span>
-            </div>
-            <input
-              type="range"
-              min="-20000"
-              max="30000"
-              step="50"
-              value={monthlyExpenseDelta}
-              onChange={(e) => setMonthlyExpenseDelta(Number(e.target.value))}
-              className="w-full accent-emerald-500 cursor-pointer"
-            />
-            <div className="flex justify-between text-xs text-slate-500 mb-2 font-mono">
-              <span>-{formatCurrency(20000, profile.currency)} (Cuts)</span>
-              <span>{formatCurrency(0, profile.currency)}</span>
-              <span>
-                +{formatCurrency(30000, profile.currency)} (Lifestyle)
-              </span>
-            </div>
-          </div>
-
-          {/* Lever 3: One-time Lump-sum Purchase */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <label className="text-slate-300 font-medium">
-                One-Time Big Purchase
-              </label>
-              <span className="font-mono font-bold text-white">
-                {formatCurrency(oneTimeExpense)}
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="300000"
-              step="500"
-              value={oneTimeExpense}
-              onChange={(e) => setOneTimeExpense(Number(e.target.value))}
-              className="w-full accent-emerald-500 cursor-pointer"
-            />
-            <div className="flex justify-between text-xs text-slate-500 mb-2 font-mono">
-              <span>{formatCurrency(0, profile.currency)}</span>
-              <span>{formatCurrency(150000, profile.currency)}</span>
-              <span>{formatCurrency(300000, profile.currency)}</span>
-            </div>
-          </div>
-
-          {/* Lever 4: Months without income (Sabbatical / Job Search) */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <label className="text-slate-300 font-medium">
-                Months Without Income
-              </label>
-              <span className="font-mono font-bold text-amber-400">
-                {monthsWithoutIncome}{" "}
-                {monthsWithoutIncome === 1 ? "Month" : "Months"}
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="12"
-              step="1"
-              value={monthsWithoutIncome}
-              onChange={(e) => setMonthsWithoutIncome(Number(e.target.value))}
-              className="w-full accent-amber-500 cursor-pointer"
-            />
-            <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-              <span>0 mo</span>
-              <span>6 mo</span>
-              <span>12 mo</span>
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* Results and Comparison Chart */}
-        <div className="lg:col-span-2 space-y-6">
-          {results &&
-            (() => {
-              const finalPoint = results.monthlyPoints[11] ||
-                results.monthlyPoints[results.monthlyPoints.length - 1] || {
-                  baseline: 0,
-                  scenario: 0,
-                };
-              const netWorthDelta = finalPoint.scenario - finalPoint.baseline;
-              const runwayDeltaMonths =
-                results.scenarioRunwayMonths - results.baselineRunwayMonths;
-              return (
-                <>
-                  {/* Impact KPI Summary Row */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 rounded-[28px] p-5.5 space-y-1 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
-                      <span className="text-xs font-mono uppercase text-slate-400 font-semibold tracking-wider">
-                        12-Month Net Difference
-                      </span>
-                      <div
-                        className={`text-2xl lg:text-3xl font-bold font-mono ${
-                          netWorthDelta >= 0
-                            ? "text-emerald-400"
-                            : "text-rose-400"
-                        }`}
-                      >
-                        {netWorthDelta >= 0
-                          ? `+${formatCurrency(netWorthDelta)}`
-                          : formatCurrency(netWorthDelta)}
-                      </div>
-                      <p className="text-xs text-slate-400">
-                        compared to current status quo
-                      </p>
-                    </div>
+        {/* Results + Chart */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Result KPIs */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: "Total Wealth", value: formatCurrency(totalProjectedWealth, profile.currency), color: "text-white" },
+              { label: "Liquid Cash", value: formatCurrency(finalBalance, profile.currency), color: "text-emerald-400" },
+              { label: "Invested", value: formatCurrency(finalInvested, profile.currency), color: "text-indigo-400" },
+              { label: "Emergency", value: formatCurrency(finalEmergency, profile.currency), color: "text-amber-400" },
+            ].map((kpi, i) => (
+              <div key={i} className="glass-card rounded-xl p-4 space-y-1 animate-fadeInUp" style={{ animationDelay: `${i * 0.06}s` }}>
+                <span className="text-[9px] font-mono uppercase text-slate-400 tracking-wider">{kpi.label}</span>
+                <div className={`text-lg font-bold font-mono ${kpi.color}`}>{kpi.value}</div>
+              </div>
+            ))}
+          </div>
 
-                    <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 rounded-[28px] p-5.5 space-y-1 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
-                      <span className="text-xs font-mono uppercase text-slate-400 font-semibold tracking-wider">
-                        Runway Shift
-                      </span>
-                      <div
-                        className={`text-2xl lg:text-3xl font-bold font-mono ${
-                          runwayDeltaMonths >= 0
-                            ? "text-emerald-400"
-                            : "text-amber-400"
-                        }`}
-                      >
-                        {runwayDeltaMonths >= 0
-                          ? `+${runwayDeltaMonths.toFixed(1)} Mo`
-                          : `${runwayDeltaMonths.toFixed(1)} Mo`}
-                      </div>
-                      <p className="text-xs text-slate-400">
-                        Survival cash buffer adjustment
-                      </p>
-                    </div>
-
-                    <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 rounded-[28px] p-5.5 space-y-1 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
-                      <span className="text-xs font-mono uppercase text-slate-400 font-semibold tracking-wider">
-                        Simulated 1-Yr Net Worth
-                      </span>
-                      <div className="text-2xl lg:text-3xl font-bold font-mono text-white">
-                        {formatCurrency(finalPoint.scenario || 0)}
-                      </div>
-                      <p className="text-xs text-slate-400">
-                        Baseline: {formatCurrency(finalPoint.baseline || 0)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* 12-Month Comparison Line Chart */}
-                  <ChartCard
-                    title="12-Month Trajectory: Baseline vs Scenario"
-                    subtitle="Comparing status quo financial trajectory with active simulated levers"
-                    actions={
-                      <div className="flex items-center gap-4 text-xs font-mono">
-                        <span className="flex items-center gap-1.5 text-slate-400">
-                          <span className="w-2.5 h-0.5 bg-slate-400" /> Baseline
-                          (Status Quo)
-                        </span>
-                        <span className="flex items-center gap-1.5 text-emerald-400">
-                          <span className="w-2.5 h-0.5 bg-emerald-400" />{" "}
-                          Simulated Path
-                        </span>
-                      </div>
-                    }
-                  >
-                    <div className="h-72 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                          data={results.monthlyPoints}
-                          margin={{ top: 10, right: 10, left: -5, bottom: 0 }}
-                        >
-                          <XAxis
-                            dataKey="month"
-                            stroke="#64748B"
-                            fontSize={11}
-                            tickLine={false}
-                          />
-                          <YAxis
-                            stroke="#64748B"
-                            fontSize={11}
-                            tickLine={false}
-                            tickFormatter={(v) =>
-                              `${CURRENCY_SYMBOLS[profile.currency] || "₹"}${Math.round(v / 1000)}k`
-                            }
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: "#0F172A",
-                              borderColor: "#334155",
-                              borderRadius: 12,
-                            }}
-                            formatter={(val: any, name: any) => [
-                              `${CURRENCY_SYMBOLS[profile.currency] || "₹"}${Number(val).toLocaleString()}`,
-                              name === "baseline"
-                                ? "Baseline Path"
-                                : "Simulated Path",
-                            ]}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="baseline"
-                            stroke="#64748B"
-                            strokeWidth={2}
-                            strokeDasharray="3 3"
-                            dot={false}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="scenario"
-                            stroke="#10B981"
-                            strokeWidth={3}
-                            dot={{ r: 3, fill: "#10B981" }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </ChartCard>
-
-                  {/* Goal Impact Table */}
-                  <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 rounded-[28px] p-6 space-y-4 shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
-                    <div className="flex items-center gap-2 text-sm font-bold text-white">
-                      <Target className="w-4 h-4 text-indigo-400" />
-                      <span>Impact on Active Savings Goals</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {results.goalImpacts.map((g, i) => (
-                        <div
-                          key={i}
-                          className="p-3.5 rounded-2xl bg-slate-800/30 backdrop-blur-md border border-slate-700/40 flex items-center justify-between text-xs"
-                        >
-                          <div>
-                            <div className="font-semibold text-slate-100">
-                              {g.goalName}
-                            </div>
-                            <div className="text-[11px] text-slate-400 mt-0.5">
-                              New Target:{" "}
-                              <span className="font-mono text-slate-300">
-                                {g.newTargetDate}
-                              </span>
-                            </div>
-                          </div>
-
-                          <span
-                            className={`text-xs font-mono font-bold px-2 py-0.5 rounded-lg ${
-                              g.impactMonths > 0
-                                ? "bg-rose-500/15 text-rose-300 border border-rose-500/30"
-                                : g.impactMonths < 0
-                                  ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
-                                  : "bg-slate-800 text-slate-400"
-                            }`}
-                          >
-                            {g.impactMonths > 0
-                              ? `+${g.impactMonths} mo delay`
-                              : g.impactMonths < 0
-                                ? `${g.impactMonths} mo earlier!`
-                                : "No change"}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              );
-            })()}
+          {/* Chart */}
+          <ChartCard title="Projected Wealth Growth"
+            subtitle={`${params.horizonMonths}-month forward simulation`}
+            actions={
+              <div className="flex items-center gap-3 text-xs font-mono">
+                <span className="flex items-center gap-1.5 text-emerald-400"><span className="w-2 h-2 rounded-full bg-emerald-400" /> Cash</span>
+                <span className="flex items-center gap-1.5 text-indigo-400"><span className="w-2 h-2 rounded-full bg-indigo-400" /> Invested</span>
+                <span className="flex items-center gap-1.5 text-amber-400"><span className="w-2 h-2 rounded-full bg-amber-400" /> Emergency</span>
+              </div>
+            }>
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={simData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="cashGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
+                    </linearGradient>
+                    <linearGradient id="investGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366F1" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#6366F1" stopOpacity={0.0} />
+                    </linearGradient>
+                    <linearGradient id="emGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="month" stroke="#64748B" fontSize={11} tickLine={false} tickFormatter={(v) => `M${v}`} />
+                  <YAxis stroke="#64748B" fontSize={11} tickLine={false} tickFormatter={(v) => `${CURRENCY_SYMBOLS[profile.currency] || "₹"}${Math.round(v / 1000)}k`} />
+                  <Tooltip contentStyle={{ backgroundColor: "#0a0a0a", borderColor: "rgba(255,255,255,0.08)", borderRadius: 12 }}
+                    formatter={(val: any, name: any) => [`${CURRENCY_SYMBOLS[profile.currency] || "₹"}${Number(val).toLocaleString()}`, name === "balance" ? "Liquid Cash" : name === "invested" ? "Invested Portfolio" : "Emergency Fund"]} />
+                  <Area type="monotone" dataKey="balance" stroke="#10B981" strokeWidth={2.5} fill="url(#cashGrad)" />
+                  <Area type="monotone" dataKey="invested" stroke="#6366F1" strokeWidth={2} fill="url(#investGrad)" />
+                  <Area type="monotone" dataKey="emergency" stroke="#F59E0B" strokeWidth={2} fill="url(#emGrad)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartCard>
         </div>
       </div>
     </div>

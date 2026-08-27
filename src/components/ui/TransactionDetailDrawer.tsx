@@ -84,21 +84,26 @@ export const TransactionDetailDrawer: React.FC<
     <div className="fixed inset-0 z-50 overflow-hidden">
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-slate-950/70 backdrop-blur-md transition-opacity"
+        className="fixed inset-0 bg-black/70 backdrop-blur-md transition-opacity animate-fadeIn"
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-md w-full bg-[#0B0F19]/90 backdrop-blur-2xl border-l border-slate-800/80 p-6 shadow-2xl flex flex-col justify-between overflow-y-auto z-10">
+      <div className="fixed inset-y-0 right-0 max-w-md w-full bg-[#0a0a0a]/95 backdrop-blur-2xl border-l border-white/[0.08] p-6 shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col justify-between overflow-y-auto z-10 animate-slideInRight">
+        {/* Top accent glow */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
+        
         <div>
           {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Transaction Details
+          <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
+            <div className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              Telemetry Details
             </div>
             <button
               onClick={onClose}
-              className="p-1 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+              aria-label="Close detail drawer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
@@ -111,37 +116,37 @@ export const TransactionDetailDrawer: React.FC<
                 size="lg"
               />
               <div className="flex-1">
-                <h3 className="text-lg font-bold text-slate-100">
+                <h3 className="text-lg font-bold text-white font-display">
                   {transaction.merchant}
                 </h3>
-                <div className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
+                <div className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5 font-mono">
                   <Calendar className="w-3.5 h-3.5" />
                   <span>{formatDate(transaction.date, "MMMM d, yyyy")}</span>
                 </div>
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400">
+            <div className="p-4 rounded-xl glass-card-static border border-white/[0.06] flex items-center justify-between">
+              <span className="text-xs font-mono uppercase text-slate-400 tracking-wider">
                 Total Amount
               </span>
               <AmountText
                 amount={transaction.amount}
                 colored
-                className="text-xl font-bold font-mono"
+                className="text-2xl font-bold font-mono"
               />
             </div>
 
             {/* Anomaly banner if flagged */}
             {transaction.isAnomaly && (
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs space-y-1">
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs space-y-1 animate-fadeIn">
                 <div className="flex items-center gap-1.5 font-semibold text-rose-400">
                   <AlertCircle className="w-4 h-4" />
-                  <span>AI Anomaly Flagged</span>
+                  <span>AI Anomaly Detected</span>
                 </div>
                 <p className="text-[11px] text-slate-300 leading-relaxed">
                   {transaction.anomalyReason ||
-                    "This transaction deviates from your typical spending pattern."}
+                    "This transaction deviates significantly from your typical spending vector."}
                 </p>
               </div>
             )}
@@ -149,27 +154,27 @@ export const TransactionDetailDrawer: React.FC<
             {/* Category selection */}
             <div className="space-y-2 pt-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-medium text-slate-400 flex items-center gap-1.5">
-                  <Tag className="w-3.5 h-3.5" /> Category
+                <span className="font-medium text-slate-400 flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider">
+                  <Tag className="w-3.5 h-3.5" /> Category Assignment
                 </span>
                 <button
                   onClick={() => setIsEditingCategory(!isEditingCategory)}
-                  className="text-emerald-400 hover:underline cursor-pointer text-[11px]"
+                  className="text-emerald-400 hover:text-emerald-300 cursor-pointer text-[11px] font-semibold"
                 >
-                  {isEditingCategory ? "Done" : "Change"}
+                  {isEditingCategory ? "Done" : "Reassign"}
                 </button>
               </div>
 
               {isEditingCategory ? (
-                <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto p-1 bg-slate-900 border border-slate-800 rounded-xl">
+                <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto p-1.5 bg-white/[0.02] border border-white/[0.06] rounded-xl">
                   {categories.map((c) => (
                     <button
                       key={c.id}
                       onClick={() => handleCategoryChange(c.id)}
-                      className={`flex items-center gap-2 p-2 rounded-lg text-left text-xs transition-colors cursor-pointer ${
+                      className={`flex items-center gap-2 p-2 rounded-lg text-left text-xs transition-all cursor-pointer ${
                         c.id === transaction.categoryId
-                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
-                          : "hover:bg-slate-800 text-slate-300"
+                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold"
+                          : "hover:bg-white/[0.04] text-slate-300"
                       }`}
                     >
                       <CategoryIcon name={c.icon} color={c.color} size="sm" />
@@ -178,7 +183,7 @@ export const TransactionDetailDrawer: React.FC<
                   ))}
                 </div>
               ) : (
-                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs">
+                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-xs">
                   <CategoryIcon
                     name={currentCategory?.icon || "Tag"}
                     color={currentCategory?.color}
@@ -193,38 +198,37 @@ export const TransactionDetailDrawer: React.FC<
 
             {/* Account Info */}
             <div className="space-y-2">
-              <div className="text-xs font-medium text-slate-400 flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5" /> Account
+              <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5" /> Connected Account
               </div>
-              <div className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-xs flex items-center justify-between">
                 <span className="text-slate-200 font-medium">
                   {currentAccount?.name || "Primary Account"}
                 </span>
-                <span className="text-slate-400 font-mono text-[11px]">
+                <span className="text-slate-400 font-mono text-[11px] px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06]">
                   •••• {currentAccount?.mask || "0000"}
                 </span>
               </div>
             </div>
 
-            {/* AI Note: Why this category? */}
+            {/* AI Note */}
             <div className="p-3.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs space-y-1.5">
               <div className="flex items-center gap-1.5 font-semibold text-indigo-400">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>AI Categorization Reasoning</span>
+                <span>AI Categorization Logic</span>
               </div>
               <p className="text-[11px] text-slate-300 leading-relaxed">
                 Categorized based on merchant keyword fingerprint (
                 <span className="font-mono text-indigo-300">
                   {transaction.merchant}
                 </span>
-                ) and matched against the standard merchant classification
-                register.
+                ) and matched against the standard merchant classification registry.
               </p>
             </div>
 
             {/* Notes */}
             <div className="space-y-2">
-              <div className="text-xs font-medium text-slate-400 flex items-center gap-1.5">
+              <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5" /> Personal Notes
               </div>
               <textarea
@@ -232,24 +236,24 @@ export const TransactionDetailDrawer: React.FC<
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Add receipt notes, tax deduction flags..."
                 rows={2}
-                className="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+                className="w-full p-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-slate-100 placeholder-slate-500 input-glow"
               />
               <button
                 onClick={handleSaveNotes}
                 disabled={isSavingNotes}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                className="px-3 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] text-slate-200 rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-all hover:border-white/[0.12]"
               >
-                <Check className="w-3 h-3 text-emerald-400" />
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Save Notes</span>
               </button>
             </div>
           </div>
         </div>
 
-        <div className="pt-4 border-t border-slate-800 text-center">
+        <div className="pt-4 border-t border-white/[0.06] text-center">
           <button
             onClick={onClose}
-            className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs rounded-xl transition-colors cursor-pointer"
+            className="w-full py-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] text-slate-200 font-semibold text-xs rounded-xl transition-all cursor-pointer hover:border-white/[0.12]"
           >
             Close Panel
           </button>

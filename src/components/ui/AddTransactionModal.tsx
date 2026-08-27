@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { Modal } from "./Modal";
 import { useUIStore } from "../../lib/store/useUIStore";
+import { useUserStore } from "../../lib/store/useUserStore";
 import { Category, Account } from "../../types";
 import { api } from "../../lib/api";
 import { format } from "date-fns";
+import { CURRENCY_SYMBOLS } from "../../lib/utils/formatters";
 
 interface AddTransactionModalProps {
   categories: Category[];
@@ -17,6 +19,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   onAdded,
 }) => {
   const { isAddTxModalOpen, closeAddTxModal, showToast } = useUIStore();
+  const { profile } = useUserStore();
   const [merchant, setMerchant] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"expense" | "income">("expense");
@@ -36,6 +39,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     setIsSubmitting(true);
     try {
       const finalAmount = type === "expense" ? -num : num;
+      const currSymbol = CURRENCY_SYMBOLS[profile.currency] || "₹";
       await api.addTransaction({
         merchant,
         amount: finalAmount,
@@ -50,7 +54,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       showToast({
         type: "success",
         title: "Transaction Logged",
-        description: `Added ${merchant} (${type === "expense" ? "-" : "+"}₹${num.toFixed(2)})`,
+        description: `Added ${merchant} (${type === "expense" ? "-" : "+"}${currSymbol}${num.toFixed(2)})`,
       });
 
       setMerchant("");
@@ -74,18 +78,18 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       isOpen={isAddTxModalOpen}
       onClose={closeAddTxModal}
       title="Add Transaction"
-      description="Record a manual expense or income entry"
+      description="Record a manual expense or income ledger entry"
       maxWidth="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Type Toggle */}
-        <div className="grid grid-cols-2 gap-2 p-1 bg-slate-900 border border-slate-800 rounded-xl">
+        <div className="grid grid-cols-2 gap-2 p-1 bg-white/[0.03] border border-white/[0.06] rounded-xl">
           <button
             type="button"
             onClick={() => setType("expense")}
-            className={`py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+            className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               type === "expense"
-                ? "bg-rose-500/20 text-rose-400 border border-rose-500/40"
+                ? "bg-rose-500/20 text-rose-400 border border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)]"
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
@@ -94,9 +98,9 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           <button
             type="button"
             onClick={() => setType("income")}
-            className={`py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+            className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               type === "income"
-                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
@@ -105,7 +109,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-300 mb-1">
+          <label className="block text-xs font-medium text-slate-300 mb-1.5 font-mono uppercase tracking-wider text-[10px]">
             Merchant / Description
           </label>
           <input
@@ -114,14 +118,14 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             placeholder="e.g. Trader Joe's, Uber, Client Wire..."
             value={merchant}
             onChange={(e) => setMerchant(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+            className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-slate-100 placeholder-slate-500 input-glow"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
-              Amount ($)
+            <label className="block text-xs font-medium text-slate-300 mb-1.5 font-mono uppercase tracking-wider text-[10px]">
+              Amount ({CURRENCY_SYMBOLS[profile.currency] || "₹"})
             </label>
             <input
               type="number"
@@ -130,11 +134,11 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               placeholder="0.00"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 focus:outline-none focus:border-emerald-500"
+              className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs font-mono text-slate-100 placeholder-slate-500 input-glow"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
+            <label className="block text-xs font-medium text-slate-300 mb-1.5 font-mono uppercase tracking-wider text-[10px]">
               Date
             </label>
             <input
@@ -142,20 +146,20 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               required
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+              className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-slate-100 input-glow"
             />
           </div>
         </div>
 
         {type === "expense" && (
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
+            <label className="block text-xs font-medium text-slate-300 mb-1.5 font-mono uppercase tracking-wider text-[10px]">
               Category
             </label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+              className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-slate-100 input-glow cursor-pointer"
             >
               {categories
                 .filter((c) => c.type === "expense")
@@ -169,13 +173,13 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         )}
 
         <div>
-          <label className="block text-xs font-medium text-slate-300 mb-1">
+          <label className="block text-xs font-medium text-slate-300 mb-1.5 font-mono uppercase tracking-wider text-[10px]">
             Account
           </label>
           <select
             value={accountId}
             onChange={(e) => setAccountId(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+            className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-slate-100 input-glow cursor-pointer"
           >
             {accounts.map((a) => (
               <option key={a.id} value={a.id}>
@@ -186,7 +190,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-300 mb-1">
+          <label className="block text-xs font-medium text-slate-300 mb-1.5 font-mono uppercase tracking-wider text-[10px]">
             Notes (Optional)
           </label>
           <input
@@ -194,24 +198,24 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             placeholder="Tags or item breakdown"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+            className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-slate-100 placeholder-slate-500 input-glow"
           />
         </div>
 
-        <div className="flex items-center justify-end gap-2 pt-2">
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/[0.06]">
           <button
             type="button"
             onClick={closeAddTxModal}
-            className="px-4 py-2 text-xs text-slate-400 hover:text-slate-200 cursor-pointer"
+            className="px-4 py-2 text-xs text-slate-400 hover:text-slate-200 cursor-pointer transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs rounded-xl shadow-md shadow-emerald-500/10 cursor-pointer"
+            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 cursor-pointer btn-glow disabled:opacity-50"
           >
-            Save Transaction
+            {isSubmitting ? "Logging..." : "Save Entry"}
           </button>
         </div>
       </form>

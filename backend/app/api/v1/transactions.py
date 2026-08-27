@@ -198,9 +198,10 @@ async def import_csv(data: dict, db: AsyncSession = Depends(get_db), current_use
         await db.flush()
     account_id = account.id
 
-    # Cache valid categories
-    cat_res = await db.execute(select(Category.id).where(Category.user_id == current_user.id))
-    valid_categories = set(cat_res.scalars().all())
+    # Cache valid categories (by their names or IDs so we don't duplicate)
+    cat_res = await db.execute(select(Category).where(Category.user_id == current_user.id))
+    user_cats = cat_res.scalars().all()
+    valid_category_ids = {c.id for c in user_cats}
 
     for i, line in enumerate(lines):
         if i == 0:
@@ -214,17 +215,21 @@ async def import_csv(data: dict, db: AsyncSession = Depends(get_db), current_use
             except ValueError:
                 continue
                 
-            # Ensure category exists
-            if cat_str and cat_str not in valid_categories:
+            # If the category ID doesn't exist for this user, we must create it.
+            # But wait, if 'cat-groceries' was created by someone else, we can't use 'cat-groceries' as ID.
+            # We'll suffix the ID with the user's short ID to ensure global uniqueness.
+            actual_cat_id = f"{cat_str}-{current_user.id[:8]}"
+            
+            if actual_cat_id not in valid_category_ids:
                 new_cat = Category(
-                    id=cat_str,
+                    id=actual_cat_id,
                     user_id=current_user.id,
                     name=cat_str.replace("cat-", "").replace("-", " ").title(),
                     type="expense",
                     is_custom=True
                 )
                 db.add(new_cat)
-                valid_categories.add(cat_str)
+                valid_category_ids.add(actual_cat_id)
                 
             tx_obj = Transaction(
                 id=f"tx-import-{int(datetime.utcnow().timestamp() * 1000)}-{i}",
@@ -232,7 +237,7 @@ async def import_csv(data: dict, db: AsyncSession = Depends(get_db), current_use
                 date=date.fromisoformat(date_str) if date_str else date.today(),
                 merchant=merchant_str or "Imported Merchant",
                 amount=amount,
-                category_id=cat_str,
+                category_id=actual_cat_id,
                 account_id=account_id,
                 status="settled",
                 is_recurring=False,

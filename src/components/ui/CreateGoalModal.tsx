@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Modal } from "./Modal";
 import { useUIStore } from "../../lib/store/useUIStore";
+import { useUserStore } from "../../lib/store/useUserStore";
 import { Account } from "../../types";
 import { api } from "../../lib/api";
-import { Sparkles, Calendar, DollarSign, Tag } from "lucide-react";
+import { CURRENCY_SYMBOLS } from "../../lib/utils/formatters";
 
 interface CreateGoalModalProps {
   accounts: Account[];
@@ -16,6 +17,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
 }) => {
   const { isCreateGoalModalOpen, closeCreateGoalModal, showToast } =
     useUIStore();
+  const { profile } = useUserStore();
   const [name, setName] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
   const [currentAmount, setCurrentAmount] = useState("0");
@@ -40,6 +42,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      const currSymbol = CURRENCY_SYMBOLS[profile.currency] || "₹";
       await api.addGoal({
         name,
         targetAmount: target,
@@ -50,13 +53,13 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
         monthlyContribution: monthly,
         color,
         icon,
-        boostSuggestion: `Automating ₹${Math.round(monthly * 0.2)}/mo more will achieve this 3 weeks earlier.`,
+        boostSuggestion: `Automating ${currSymbol}${Math.round(monthly * 0.2)}/mo more will achieve this 3 weeks earlier.`,
       });
 
       showToast({
         type: "success",
         title: "Goal Created",
-        description: `Tracking "${name}" with monthly target of ₹${monthly}.`,
+        description: `Tracking "${name}" with monthly target of ${currSymbol}${monthly}.`,
       });
 
       setName("");
@@ -76,6 +79,8 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
     }
   };
 
+  const currSymbol = CURRENCY_SYMBOLS[profile.currency] || "₹";
+
   return (
     <Modal
       isOpen={isCreateGoalModalOpen}
@@ -86,7 +91,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-medium text-slate-300 mb-1">
+          <label className="block text-xs font-medium text-slate-300 mb-1.5 font-mono uppercase tracking-wider text-[10px]">
             Goal Name
           </label>
           <input
@@ -95,14 +100,14 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
             placeholder="e.g. Vacation to Iceland, Car Down Payment..."
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+            className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-slate-100 placeholder-slate-500 input-glow"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
-              Target Amount ($)
+            <label className="block text-xs font-medium text-slate-300 mb-1.5 font-mono uppercase tracking-wider text-[10px]">
+              Target Amount ({currSymbol})
             </label>
             <input
               type="number"
@@ -111,12 +116,12 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               placeholder="5000"
               value={targetAmount}
               onChange={(e) => setTargetAmount(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 focus:outline-none focus:border-emerald-500"
+              className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs font-mono text-slate-100 placeholder-slate-500 input-glow"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
-              Starting Amount ($)
+            <label className="block text-xs font-medium text-slate-300 mb-1.5 font-mono uppercase tracking-wider text-[10px]">
+              Starting Amount ({currSymbol})
             </label>
             <input
               type="number"
@@ -124,14 +129,14 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               placeholder="0"
               value={currentAmount}
               onChange={(e) => setCurrentAmount(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 focus:outline-none focus:border-emerald-500"
+              className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs font-mono text-slate-100 placeholder-slate-500 input-glow"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
+            <label className="block text-xs font-medium text-slate-300 mb-1.5 font-mono uppercase tracking-wider text-[10px]">
               Target Date
             </label>
             <input
@@ -139,12 +144,12 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               required
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+              className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-slate-100 input-glow"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
-              Monthly Auto-Save ($)
+            <label className="block text-xs font-medium text-slate-300 mb-1.5 font-mono uppercase tracking-wider text-[10px]">
+              Monthly Auto-Save ({currSymbol})
             </label>
             <input
               type="number"
@@ -152,23 +157,23 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
               placeholder="350"
               value={monthlyContribution}
               onChange={(e) => setMonthlyContribution(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 focus:outline-none focus:border-emerald-500"
+              className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs font-mono text-slate-100 placeholder-slate-500 input-glow"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-300 mb-1">
+          <label className="block text-xs font-medium text-slate-300 mb-1.5 font-mono uppercase tracking-wider text-[10px]">
             Linked Funding Account
           </label>
           <select
             value={linkedAccountId}
             onChange={(e) => setLinkedAccountId(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+            className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-slate-100 input-glow cursor-pointer"
           >
             {accounts.map((a) => (
               <option key={a.id} value={a.id}>
-                {a.name}
+                {a.name} (•••• {a.mask})
               </option>
             ))}
           </select>
@@ -177,7 +182,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
         {/* Color / Icon Theme */}
         <div className="grid grid-cols-2 gap-3 pt-1">
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
+            <label className="block text-xs font-medium text-slate-300 mb-1.5 font-mono uppercase tracking-wider text-[10px]">
               Theme Accent
             </label>
             <div className="flex items-center gap-2">
@@ -193,25 +198,26 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  className={`w-6 h-6 rounded-full transition-transform cursor-pointer ${
+                  className={`w-7 h-7 rounded-lg transition-all cursor-pointer ${
                     color === c
-                      ? "ring-2 ring-white scale-110"
-                      : "opacity-70 hover:opacity-100"
+                      ? "ring-2 ring-white scale-110 shadow-lg"
+                      : "opacity-60 hover:opacity-100"
                   }`}
                   style={{ backgroundColor: c }}
+                  aria-label={`Select color ${c}`}
                 />
               ))}
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
+            <label className="block text-xs font-medium text-slate-300 mb-1.5 font-mono uppercase tracking-wider text-[10px]">
               Icon Badge
             </label>
             <select
               value={icon}
               onChange={(e) => setIcon(e.target.value)}
-              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+              className="w-full px-3 py-2 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-slate-100 input-glow cursor-pointer"
             >
               <option value="ShieldCheck">Shield (Emergency)</option>
               <option value="Plane">Plane (Travel)</option>
@@ -222,20 +228,20 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 pt-2">
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/[0.06]">
           <button
             type="button"
             onClick={closeCreateGoalModal}
-            className="px-4 py-2 text-xs text-slate-400 hover:text-slate-200 cursor-pointer"
+            className="px-4 py-2 text-xs text-slate-400 hover:text-slate-200 cursor-pointer transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs rounded-xl shadow-md shadow-emerald-500/10 cursor-pointer"
+            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 cursor-pointer btn-glow disabled:opacity-50"
           >
-            Save Goal
+            {isSubmitting ? "Creating..." : "Save Goal"}
           </button>
         </div>
       </form>

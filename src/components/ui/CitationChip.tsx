@@ -20,10 +20,10 @@ export const CitationChip: React.FC<CitationChipProps> = ({
     <div className={cn("inline-block text-xs font-mono", className)}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors cursor-pointer text-xs font-medium"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/25 transition-all cursor-pointer text-[11px] font-semibold"
       >
         <Database className="w-3 h-3 text-emerald-400" />
-        <span>Grounded in your data ({groundedData.length} signals)</span>
+        <span>Grounded data ({groundedData.length} signals)</span>
         {isOpen ? (
           <ChevronUp className="w-3 h-3" />
         ) : (
@@ -32,18 +32,18 @@ export const CitationChip: React.FC<CitationChipProps> = ({
       </button>
 
       {isOpen && (
-        <div className="mt-2 p-3 bg-slate-900/90 border border-slate-800 rounded-xl space-y-1.5 shadow-xl max-w-sm">
-          <div className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1">
-            Data Grounding Evidence
+        <div className="mt-2 p-3.5 bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/[0.08] rounded-xl space-y-2 shadow-2xl max-w-sm animate-fadeIn">
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">
+            Grounding Evidence Signals
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
             {groundedData.map((item, idx) => (
               <div
                 key={idx}
-                className="bg-slate-800/50 p-1.5 rounded-lg border border-slate-700/50"
+                className="bg-white/[0.02] p-2 rounded-lg border border-white/[0.04]"
               >
-                <div className="text-[10px] text-slate-400">{item.label}</div>
-                <div className="font-semibold text-slate-200 truncate">
+                <div className="text-[9px] text-slate-400 font-mono truncate">{item.label}</div>
+                <div className="font-semibold text-slate-200 truncate font-mono text-[11px] mt-0.5">
                   {item.value}
                 </div>
               </div>

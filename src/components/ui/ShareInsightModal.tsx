@@ -1,5 +1,5 @@
-﻿import React from 'react';
-import { Share2, Check, X } from 'lucide-react';
+import React from 'react';
+import { Share2, Check, X, Sparkles } from 'lucide-react';
 
 interface ShareInsightModalProps {
   isOpen: boolean;
@@ -25,41 +25,48 @@ export const ShareInsightModal: React.FC<ShareInsightModalProps> = ({ isOpen, on
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-[#0a0a0a] border border-white/[0.08] rounded-2xl p-6 shadow-2xl">
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-md transition-opacity animate-fadeIn" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-[#0a0a0a]/95 backdrop-blur-2xl border border-white/[0.08] rounded-2xl p-6 shadow-[0_25px_60px_rgba(0,0,0,0.5)] z-10 animate-scaleIn overflow-hidden">
+        {/* Top glow */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
+        
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-[#a1a1aa] hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors"
+          aria-label="Close dialog"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
         
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-            <Share2 className="w-5 h-5 text-blue-400" />
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+            <Share2 className="w-5 h-5 text-emerald-400" />
           </div>
-          <h2 className="text-xl font-medium text-white">Share Milestone</h2>
+          <div>
+            <h2 className="text-base font-bold text-white font-display">Share Milestone</h2>
+            <p className="text-xs text-slate-400">Export verified telemetry highlight</p>
+          </div>
         </div>
 
-        <div className="bg-[#141414] border border-white/[0.04] rounded-xl p-4 mb-6 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[40px] rounded-full pointer-events-none" />
-          <h3 className="text-sm font-medium text-white mb-2">{title}</h3>
-          <p className="text-[#a1a1aa] text-sm leading-relaxed">{insight}</p>
-          <div className="mt-4 flex items-center gap-2">
+        <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 mb-6 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[40px] rounded-full pointer-events-none" />
+          <h3 className="text-xs font-bold text-white mb-1.5 font-mono">{title}</h3>
+          <p className="text-slate-300 text-xs leading-relaxed">{insight}</p>
+          <div className="mt-4 flex items-center gap-2 pt-3 border-t border-white/[0.04]">
             <div className="w-4 h-4 rounded-sm bg-white flex items-center justify-center">
               <span className="text-[10px] font-bold text-black">F</span>
             </div>
-            <span className="text-xs text-[#52525b]">Finpluse AI</span>
+            <span className="text-[11px] font-mono text-slate-500">Finpluse AI Telemetry</span>
           </div>
         </div>
 
         <button
           onClick={handleCopy}
-          className="w-full flex items-center justify-center gap-2 bg-white text-black py-3 rounded-xl text-sm font-medium hover:bg-[#e5e5e5] transition-all active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-2 bg-emerald-500 text-slate-950 font-bold py-3 rounded-xl text-xs hover:bg-emerald-400 transition-all btn-glow cursor-pointer"
         >
           {copied ? (
             <>
-              <Check className="w-4 h-4" />
+              <Check className="w-4 h-4 stroke-[3]" />
               Copied to clipboard
             </>
           ) : (

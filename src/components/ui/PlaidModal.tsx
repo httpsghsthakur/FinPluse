@@ -110,7 +110,7 @@ export const PlaidModal: React.FC<{ onAccountAdded?: () => void }> = ({
     >
       {step === "select" && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 p-3 bg-slate-900/80 border border-slate-800 rounded-xl text-xs text-slate-300">
+          <div className="flex items-center gap-2 p-3 bg-emerald-500/[0.04] border border-emerald-500/15 rounded-xl text-xs text-slate-300">
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>
               Finpluse uses end-to-end read-only tokens. Your credentials are
@@ -123,7 +123,7 @@ export const PlaidModal: React.FC<{ onAccountAdded?: () => void }> = ({
               <button
                 key={inst.name}
                 onClick={() => handleSelect(inst)}
-                className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/80 transition-all text-left group cursor-pointer"
+                className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-emerald-500/30 hover:bg-white/[0.04] transition-all text-left group cursor-pointer"
               >
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm"
@@ -135,7 +135,7 @@ export const PlaidModal: React.FC<{ onAccountAdded?: () => void }> = ({
                   <div className="text-xs font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors truncate">
                     {inst.name}
                   </div>
-                  <div className="text-[10px] text-slate-400 capitalize">
+                  <div className="text-[10px] text-slate-400 capitalize font-mono">
                     {inst.type}
                   </div>
                 </div>
@@ -147,7 +147,7 @@ export const PlaidModal: React.FC<{ onAccountAdded?: () => void }> = ({
 
       {step === "credentials" && selectedInst && (
         <form onSubmit={handleConnect} className="space-y-4">
-          <div className="flex items-center gap-3 p-3 bg-slate-900/60 border border-slate-800 rounded-xl">
+          <div className="flex items-center gap-3 p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl">
             <div
               className="w-9 h-9 rounded-lg flex items-center justify-center text-white"
               style={{ backgroundColor: selectedInst.color }}
@@ -158,50 +158,50 @@ export const PlaidModal: React.FC<{ onAccountAdded?: () => void }> = ({
               <div className="text-sm font-semibold text-slate-200">
                 {selectedInst.name}
               </div>
-              <div className="text-[11px] text-slate-400">
-                Direct OAuth Verification
+              <div className="text-[11px] text-slate-400 font-mono">
+                Direct OAuth 2.0 Handshake
               </div>
             </div>
           </div>
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-slate-300 mb-1 font-mono uppercase tracking-wider text-[10px]">
                 User ID / Username
               </label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+                className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-slate-100 placeholder-slate-500 input-glow"
                 required
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-slate-300 mb-1 font-mono uppercase tracking-wider text-[10px]">
                 Password
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+                className="w-full px-3.5 py-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl text-xs text-slate-100 placeholder-slate-500 input-glow"
                 required
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
             <button
               type="button"
               onClick={() => setStep("select")}
-              className="text-xs text-slate-400 hover:text-slate-200 cursor-pointer"
+              className="text-xs text-slate-400 hover:text-slate-200 cursor-pointer transition-colors"
             >
               Back
             </button>
             <button
               type="submit"
-              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs rounded-xl shadow-lg shadow-emerald-500/10 cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 cursor-pointer btn-glow"
             >
               <span>Authenticate & Link</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -216,7 +216,7 @@ export const PlaidModal: React.FC<{ onAccountAdded?: () => void }> = ({
           <div className="text-sm font-semibold text-slate-200">
             Verifying secure OAuth credentials...
           </div>
-          <div className="text-xs text-slate-400 max-w-xs">
+          <div className="text-xs text-slate-400 max-w-xs font-mono text-[11px]">
             Establishing encrypted TLS socket with {selectedInst?.name} gateway.
           </div>
         </div>
@@ -228,7 +228,7 @@ export const PlaidModal: React.FC<{ onAccountAdded?: () => void }> = ({
           <div className="text-sm font-bold text-slate-100">
             Account Linked Successfully!
           </div>
-          <div className="text-xs text-slate-400">
+          <div className="text-xs text-slate-400 font-mono text-[11px]">
             Importing recent transactions and balances...
           </div>
         </div>

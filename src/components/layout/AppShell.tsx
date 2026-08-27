@@ -51,13 +51,39 @@ export const AppShell: React.FC = () => {
   }, [selectedTxIdForDetail]);
 
   return (
-    <div className="flex h-screen w-full bg-[#0B0F19] text-slate-100 overflow-hidden font-sans relative">
-      {/* Frosted Glass Ambient Lighting Effects */}
+    <div className="flex h-screen w-full bg-[#030303] text-slate-100 overflow-hidden font-sans relative">
+      {/* ═══ Animated Aurora Ambient Lighting ═══ */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[45%] h-[45%] bg-emerald-500/10 rounded-full blur-[130px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-500/10 rounded-full blur-[140px]" />
-        <div className="absolute top-[35%] right-[25%] w-[30%] h-[30%] bg-teal-500/5 rounded-full blur-[110px]" />
+        {/* Primary emerald aurora */}
+        <div
+          className="absolute top-[-15%] left-[-10%] w-[50%] h-[50%] rounded-full animate-aurora"
+          style={{
+            background: 'radial-gradient(ellipse, rgba(16, 185, 129, 0.08) 0%, transparent 70%)',
+            filter: 'blur(80px)',
+          }}
+        />
+        {/* Secondary indigo aurora */}
+        <div
+          className="absolute bottom-[-15%] right-[-10%] w-[55%] h-[55%] rounded-full animate-aurora-2"
+          style={{
+            background: 'radial-gradient(ellipse, rgba(99, 102, 241, 0.07) 0%, transparent 70%)',
+            filter: 'blur(90px)',
+          }}
+        />
+        {/* Tertiary cyan aurora */}
+        <div
+          className="absolute top-[30%] right-[20%] w-[35%] h-[35%] rounded-full animate-aurora-3"
+          style={{
+            background: 'radial-gradient(ellipse, rgba(6, 182, 212, 0.04) 0%, transparent 70%)',
+            filter: 'blur(70px)',
+          }}
+        />
+        {/* Grid pattern overlay */}
+        <div className="absolute inset-0 grid-pattern opacity-30" />
       </div>
+
+      {/* ═══ Tactical Scan Line ═══ */}
+      <div className="scan-line-overlay" />
 
       {/* Sidebar for desktop/tablet */}
       <Sidebar />
