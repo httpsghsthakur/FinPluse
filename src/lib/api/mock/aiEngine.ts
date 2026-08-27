@@ -77,18 +77,70 @@ export function generateAICopilotResponse(
   );
 
   // 1. "Can I afford" / "afford" query
-  if (q.includes("afford") || q.includes("buy") || q.includes("purchase")) {
-    // Extract any number from query
-    const match = q.match(/\$?(\d+[\d,]*)/);
-    const amountToTest = match ? parseFloat(match[1].replace(/,/g, "")) : 6500;
+  if (
+    q.includes("afford") ||
+    q.includes("buy") ||
+    q.includes("purchase") ||
+    q.includes("get") ||
+    q.includes("spend")
+  ) {
+    let amountToTest = 0;
+    let itemName = "Proposed Purchase";
+
+    // Multiplier parsing (50k, 1.5L, 2 Lakh, etc.)
+    const kMatch = q.match(/(\d+(?:\.\d+)?)\s*(?:k|thousand)/);
+    const lMatch = q.match(/(\d+(?:\.\d+)?)\s*(?:l|lac|lakh|lakhs)/);
+    const crMatch = q.match(/(\d+(?:\.\d+)?)\s*(?:cr|crore|crores)/);
+    const numMatch = q.match(/(?:₹|\$|rs\.?|inr)?\s*([\d,]+(?:\.\d+)?)/);
+
+    if (kMatch) {
+      amountToTest = parseFloat(kMatch[1]) * 1000;
+    } else if (lMatch) {
+      amountToTest = parseFloat(lMatch[1]) * 100000;
+    } else if (crMatch) {
+      amountToTest = parseFloat(crMatch[1]) * 10000000;
+    } else if (numMatch && parseFloat(numMatch[1].replace(/,/g, "")) > 10) {
+      amountToTest = parseFloat(numMatch[1].replace(/,/g, ""));
+    } else {
+      // Semantic item lookup
+      const itemPrices: [RegExp, number, string][] = [
+        [/\b(iphone\s*1[567]?(?:\s*pro(?:\s*max)?)?|flagship\s*phone)\b/, 125000, "Flagship Smartphone"],
+        [/\b(phone|smartphone|mobile|android|pixel|samsung)\b/, 65000, "New Smartphone"],
+        [/\b(macbook\s*(?:pro|air|m[1-4])?|gaming\s*laptop)\b/, 145000, "Laptop / MacBook"],
+        [/\b(laptop|computer|pc|ipad|tablet)\b/, 75000, "Personal Computer / Tablet"],
+        [/\b(car|suv|sedan|vehicle|automobile)\b/, 850000, "New Car / Vehicle"],
+        [/\b(bike|motorcycle|scooter|ev\s*scooter)\b/, 130000, "Two-Wheeler / Bike"],
+        [/\b(trip|vacation|holiday|bali|europe|flight|tour)\b/, 95000, "Vacation / Travel Trip"],
+        [/\b(watch|apple\s*watch|smartwatch)\b/, 42000, "Smartwatch / Wearable"],
+        [/\b(ps5|playstation|xbox|gaming\s*console)\b/, 55000, "Gaming Console"],
+        [/\b(tv|television|oled|projector)\b/, 65000, "Smart TV / Home Entertainment"],
+        [/\b(dinner|party|club|restaurant|fine\s*dining)\b/, 4500, "Dining Outing"],
+        [/\b(shoes|sneakers|jacket|clothes|shopping)\b/, 8500, "Retail / Apparel"],
+        [/\b(gym|cult|fitness\s*membership)\b/, 18000, "Annual Gym Membership"],
+      ];
+
+      for (const [pattern, price, label] of itemPrices) {
+        if (pattern.test(q)) {
+          amountToTest = price;
+          itemName = label;
+          break;
+        }
+      }
+
+      if (!amountToTest) {
+        amountToTest = 45000;
+        itemName = "Discretionary Purchase";
+      }
+    }
+
     const postPurchaseChecking = totalChecking - amountToTest;
     const isSafe = postPurchaseChecking > 25000;
 
     if (personality === "concise") {
       return {
         content: isSafe
-          ? `**Yes, you can afford ${formatCurrency(amountToTest)}.** Your checking account will retain **${formatCurrency(postPurchaseChecking)}**, and your overall cash runway remains strong at **${runwayMonths} months**.`
-          : `**Caution on spending ${formatCurrency(amountToTest)}.** While you have sufficient funds, this would reduce your checking cushion to **${formatCurrency(postPurchaseChecking)}**, dropping below your ideal 1-month liquid reserve (₹25,000).`,
+          ? `**Yes, you can afford ${itemName} (${formatCurrency(amountToTest)}).** Your checking account retains **${formatCurrency(postPurchaseChecking)}**, and your overall cash runway remains **${runwayMonths} months**.`
+          : `**Caution on purchasing ${itemName} (${formatCurrency(amountToTest)}).** This would reduce your checking cushion to **${formatCurrency(postPurchaseChecking)}**, dropping below your ideal 1-month liquid reserve (₹25,000).`,
         groundedData: [
           { label: "Proposed Purchase", value: formatCurrency(amountToTest) },
           { label: "Current Checking", value: formatCurrency(totalChecking) },
@@ -115,16 +167,16 @@ export function generateAICopilotResponse(
     }
 
     return {
-      content: `### Affordability Assessment for ${formatCurrency(amountToTest)}
+      content: `### Affordability Assessment: ${itemName} (${formatCurrency(amountToTest)})
 Based on your real-time liquidity and automated cash-flow obligations:
 
 1. **Checking Account Liquidity**: You currently hold **${formatCurrency(totalChecking)}** in your primary checking.
 2. **Buffer After Purchase**: Deducting ${formatCurrency(amountToTest)} leaves **${formatCurrency(postPurchaseChecking)}** in liquid checking reserves.
-3. **Upcoming Cash Outflows**: Over the next 14 days, you have scheduled recurring debits.
+3. **Emergency Runway**: Your total savings (${formatCurrency(totalSavings)}) guarantees **${runwayMonths} months of liquid runway**.
 4. **Recommendation**: ${
         isSafe
-          ? `**Comfortable to proceed.** Your savings (${formatCurrency(totalSavings)}) guarantees **${runwayMonths} months of emergency runway**, so this single expense will not compromise your safety buffer.`
-          : `**Exercise caution.** Consider delaying until your next paycheck, or transferring from your discretionary allocation.`
+          ? `**Comfortable to proceed.** Your safety cushion remains well above baseline, and this purchase fits cleanly within your cash-flow plan.`
+          : `**Exercise caution.** Consider delaying until your next paycheck, or transferring from discretionary allocation.`
       }`,
       groundedData: [
         { label: "Proposed Item", value: formatCurrency(amountToTest) },
