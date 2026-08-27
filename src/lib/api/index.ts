@@ -331,10 +331,15 @@ class ApiClient {
       const res = await apiFetch(`/transactions/import`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csvText }),
+        body: JSON.stringify({ csvText, csv_text: csvText }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to import CSV`);
-      return res.json();
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("CSV import error response:", res.status, errorText);
+        throw new Error(`HTTP ${res.status}: ${errorText || "Failed to import CSV"}`);
+      }
+      const data = await res.json();
+      return { importedCount: data.importedCount ?? data.imported_count ?? 0 };
     }
 
     await delay(700);
@@ -376,13 +381,15 @@ class ApiClient {
       const res = await apiFetch(`/admin/replace_transactions_from_csv`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csvText }),
+        body: JSON.stringify({ csvText, csv_text: csvText }),
       });
-      if (!res.ok)
-        throw new Error(
-          `HTTP ${res.status}: Failed to replace transactions from CSV`,
-        );
-      return res.json();
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("CSV replace error response:", res.status, errorText);
+        throw new Error(`HTTP ${res.status}: ${errorText || "Failed to replace transactions from CSV"}`);
+      }
+      const data = await res.json();
+      return { importedCount: data.importedCount ?? data.imported_count ?? 0 };
     }
 
     await delay(700);
