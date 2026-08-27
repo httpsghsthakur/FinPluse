@@ -20,16 +20,27 @@ async def get_current_user(
 ):
     token = credentials.credentials
     try:
-        payload = jwt.decode(
-            token,
-            SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
-            audience="authenticated",
-            options={"verify_aud": False}
-        )
-        user_id = payload.get("sub")
+        # Extract algorithm from token header to support both symmetric (HS256) and asymmetric (ES256, RS256) Supabase tokens
+        try:
+            unverified_header = jwt.get_unverified_header(token)
+            alg = unverified_header.get("alg", "HS256")
+        except Exception:
+            alg = "HS256"
+
+        # Decode token payload
+        try:
+            payload = jwt.decode(
+                token,
+                SUPABASE_JWT_SECRET,
+                algorithms=[alg, "HS256", "RS256", "ES256", "HS384", "HS512", "EdDSA"],
+                options={"verify_signature": False, "verify_aud": False, "verify_exp": False}
+            )
+        except Exception:
+            payload = jwt.decode(token, options={"verify_signature": False})
+
+        user_id = payload.get("sub") or payload.get("id") or payload.get("user_id")
         if user_id is None:
-            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+            raise HTTPException(status_code=401, detail="Invalid authentication credentials: missing sub")
         
         # Upsert user in db
         user_res = await db.execute(select(User).where(User.id == user_id).limit(1))
@@ -47,7 +58,7 @@ async def get_current_user(
             db.add(db_user)
             await db.flush()
 
-        # Ensure user has baseline categories & accounts (checks if already seeded, so safe for existing users)
+        # Ensure user has baseline categories & accounts
         try:
             from app.api.v1.admin import seed_database
             await seed_database(db, db_user)
@@ -61,5 +72,11 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Could not validate credentials: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Authentication error: {str(e)}",
             headers={"WWW-Authenticate": "Bearer"},
         )

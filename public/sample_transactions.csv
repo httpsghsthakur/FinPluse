@@ -1,0 +1,22 @@
+Date,Merchant,Amount,Category
+2026-08-01,TechCorp India Salary,95000.00,cat-income
+2026-08-01,Prestige Apartments Rent,-25000.00,cat-housing
+2026-08-02,Reliance Fresh Supermarket,-3420.50,cat-groceries
+2026-08-03,Third Wave Coffee Roasters,-650.00,cat-dining
+2026-08-04,Swiggy Gourmet Delivery,-1240.00,cat-dining
+2026-08-05,Shell Petrol Fuel Station,-2800.00,cat-transport
+2026-08-06,Amazon India Electronics,-4599.00,cat-shopping
+2026-08-07,Netflix Premium 4K,-649.00,cat-subscriptions
+2026-08-08,Spotify Premium Individual,-119.00,cat-subscriptions
+2026-08-09,Nature's Basket Gourmet,-1850.00,cat-groceries
+2026-08-10,Cult.fit Gym Membership,-1500.00,cat-health
+2026-08-11,JioFiber Broadband Ultra,-1499.00,cat-utilities
+2026-08-12,BESCOM Electricity Bill,-2150.00,cat-utilities
+2026-08-13,Uber Trips Premium,-480.00,cat-transport
+2026-08-14,BookMyShow IMAX Movie,-850.00,cat-entertainment
+2026-08-15,Razorpay Freelance Client Milestone,35000.00,cat-income
+2026-08-16,Zomato Late Night Dinner,-780.00,cat-dining
+2026-08-17,Blinkit Instant Groceries,-920.00,cat-groceries
+2026-08-18,Apollo Pharmacy Medicines,-450.00,cat-health
+2026-08-19,Decathlon Sports Gear,-3200.00,cat-shopping
+2026-08-20,SBI Fixed Deposit Interest Yield,8875.00,cat-income
