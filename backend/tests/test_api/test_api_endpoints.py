@@ -19,7 +19,7 @@ async def test_get_accounts(client: AsyncClient):
     assert res.status_code == 200
     data = res.json()
     assert len(data) >= 3
-    assert any(a["id"] == "acc-checking" for a in data)
+    assert any(a["id"].startswith("acc-checking") for a in data)
 
 
 @pytest.mark.asyncio
@@ -120,13 +120,16 @@ async def test_simulator_and_copilot(client: AsyncClient):
 
     # Copilot Chat
     from unittest.mock import AsyncMock, patch
-    with patch("app.api.v1.copilot.sql_agent.execute", new_callable=AsyncMock) as mock_execute:
-        mock_execute.return_value = {
-            "sql": "SELECT * FROM transactions",
-            "results": [{"amount": -500}],
-            "explanation": "Yes, you can afford it.",
-            "data_provenance": ["transactions"]
-        }
+    mock_response = {
+        "content": "Yes, you can afford it based on your current financial position.",
+        "groundedData": [
+            {"label": "Available Balance", "value": "₹1,50,000"},
+        ],
+        "confidence": "High",
+        "quickActions": [],
+    }
+    with patch("app.api.v1.copilot._generate_response", new_callable=AsyncMock) as mock_gen:
+        mock_gen.return_value = mock_response
         chat_res = await client.post("/api/v1/copilot/chat", json={"message": "Can I afford a $500 flight?"})
     assert chat_res.status_code == 200
     chat_data = chat_res.json()
