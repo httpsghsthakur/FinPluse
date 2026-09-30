@@ -17,9 +17,11 @@ from app.api.v1.simulator import router as simulator_router
 from app.api.v1.copilot import router as copilot_router
 from app.api.v1.admin import router as admin_router
 from app.api.v1.ml_endpoints import router as ml_router
+from app.api.v1.markets import router as markets_router
 
 api_router = APIRouter()
 
+api_router.include_router(markets_router, prefix="/markets", tags=["Markets"])
 api_router.include_router(accounts_router, prefix="/accounts", tags=["Accounts"])
 api_router.include_router(transactions_router, prefix="/transactions", tags=["Transactions"])
 api_router.include_router(categories_router, prefix="/categories", tags=["Categories"])

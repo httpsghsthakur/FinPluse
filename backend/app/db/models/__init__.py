@@ -19,6 +19,8 @@ from app.db.models.document import Document, DocumentChunk
 from app.db.models.ml_model import ModelVersion, TrainingDataset
 from app.db.models.prediction_audit import PredictionAudit
 from app.db.models.user_correction import UserCorrection
+from app.db.models.market import Instrument, MarketSnapshot, HistoricalCandle
+from app.db.models.portfolio import Portfolio, PortfolioPosition
 
 __all__ = [
     "User",
@@ -41,4 +43,9 @@ __all__ = [
     "TrainingDataset",
     "PredictionAudit",
     "UserCorrection",
+    "Instrument",
+    "MarketSnapshot",
+    "HistoricalCandle",
+    "Portfolio",
+    "PortfolioPosition",
 ]

@@ -1,79 +1,49 @@
 import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
-  Wallet,
-  CreditCard,
-  Clock,
-  PiggyBank,
   TrendingUp,
-  Sparkles,
-  ArrowRight,
-  AlertTriangle,
-  Calendar,
+  TrendingDown,
+  Activity,
+  BarChart2,
+  Globe,
   ChevronRight,
-  Bot,
-  Plus,
+  Sparkles,
+  AlertTriangle,
+  Search,
+  Eye,
+  PieChart
 } from "lucide-react";
-import { KpiCard } from "../components/ui/KpiCard";
-import { ChartCard } from "../components/ui/ChartCard";
-import { ShareInsightModal } from "../components/ui/ShareInsightModal";
-import { CategoryIcon } from "../components/ui/CategoryIcon";
-import { AmountText } from "../components/ui/AmountText";
-import { ProgressBar } from "../components/ui/ProgressBar";
-import {
-  KpiSkeleton,
-  ChartSkeleton,
-  TableSkeleton,
-} from "../components/ui/Skeletons";
-import { CitationChip } from "../components/ui/CitationChip";
-import { DashboardSummary, Insight } from "../types";
-import { api } from "../lib/api";
-import { useUIStore } from "../lib/store/useUIStore";
-import { formatDate, formatCurrency } from "../lib/utils/formatters";
-import { useUserStore } from "../lib/store/useUserStore";
-import { CURRENCY_SYMBOLS } from "../lib/utils/formatters";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
+import { KpiSkeleton } from "../components/ui/Skeletons";
+import { marketApi, MarketOverview } from "../lib/api/markets";
+import { formatCurrency } from "../lib/utils/formatters";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
+
+// Mock data for charts
+const generateMockChart = () => Array.from({ length: 20 }, (_, i) => ({
+  time: i,
+  value: 22000 + Math.random() * 1000 + (i * 20)
+}));
 
 export const DashboardPage: React.FC = () => {
-  const { openTxDetail, openAddTxModal } = useUIStore();
-  const { profile } = useUserStore();
-  const [data, setData] = useState<DashboardSummary | null>(null);
-  const [insights, setInsights] = useState<Insight[]>([]);
-  const [expandedInsightId, setExpandedInsightId] = useState<string | null>(null);
+  const [marketData, setMarketData] = useState<MarketOverview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [shareOpen, setShareOpen] = useState(false);
-
-  const loadDashboard = async () => {
-    setIsLoading(true);
-    try {
-      const [summary, insList] = await Promise.all([
-        api.getDashboardSummary(),
-        api.getInsights(),
-      ]);
-      setData(summary);
-      setInsights(insList.filter((i) => !i.isDismissed).slice(0, 3));
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
-    loadDashboard();
+    const fetchMarkets = async () => {
+      try {
+        const response = await marketApi.getOverview();
+        setMarketData(response.data);
+      } catch (e) {
+        console.error("Error loading market data", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchMarkets();
   }, []);
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -82,448 +52,180 @@ export const DashboardPage: React.FC = () => {
           <KpiSkeleton />
           <KpiSkeleton />
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <ChartSkeleton height="h-[300px]" />
-          </div>
-          <ChartSkeleton height="h-[300px]" />
-        </div>
-        <TableSkeleton rows={6} />
       </div>
     );
   }
 
-  const avgSavings = data.cashFlowHistory.length
-    ? data.cashFlowHistory.reduce((acc, curr) => acc + curr.savings, 0) /
-      data.cashFlowHistory.length
-    : 0;
-
   return (
-    <div className="space-y-6">
-      {/* ═══ Low-Balance Alert Banner ═══ */}
-      {data.lowBalanceAlert.hasLowBalance && (
-        <div className="p-4 rounded-xl glass-card-danger flex items-center justify-between gap-4 animate-fadeInDown">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/15 border border-amber-500/25">
-              <AlertTriangle className="w-4 h-4 text-amber-400" />
-            </div>
-            <div className="text-xs">
-              <span className="font-bold text-amber-300">
-                Low Balance Forecast Warning:{" "}
-              </span>
-              <span className="text-slate-200">
-                Checking balance projected to dip below{" "}
-                {formatCurrency(
-                  data.lowBalanceAlert.threshold || 0,
-                  profile.currency,
-                )}{" "}
-                on {data.lowBalanceAlert.date}.
-              </span>
-            </div>
-          </div>
-          <NavLink
-            to="/app/forecast"
-            className="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 text-xs font-bold hover:bg-amber-400 transition-all shrink-0 btn-glow"
-          >
-            Review Forecast
-          </NavLink>
+    <div className="space-y-6 animate-fadeIn">
+      {/* ═══ Header Section ═══ */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Market Intelligence</h1>
+          <p className="text-sm text-slate-400 mt-1">Live market overview, AI outlook, and portfolio analytics.</p>
         </div>
-      )}
-
-      {/* ═══ 4 KPI Cards — Staggered entrance ═══ */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard
-          title="Net Worth"
-          value={data.netWorth}
-          changePct={data.netWorthMomPct}
-          changePeriodText="MoM"
-          icon={Wallet}
-          badge={{ text: "Compounding", variant: "emerald" }}
-          delay={0}
-        />
-        <KpiCard
-          title="Monthly Spend"
-          value={data.monthlySpending}
-          changePct={data.monthlySpendVsBudgetPct}
-          changePeriodText={`vs Budget (${formatCurrency(data.monthlyBudgetTotal, profile.currency)})`}
-          icon={CreditCard}
-          delay={80}
-        />
-        <KpiCard
-          title="Cash Runway"
-          value={data.cashRunwayMonths}
-          isCurrency={false}
-          suffix=" Months"
-          subtext="Liquid checking + HYSA reserves"
-          icon={Clock}
-          badge={{ text: "Safe Tier", variant: "emerald" }}
-          delay={160}
-        />
-        <KpiCard
-          title="Savings Rate"
-          value={data.savingsRatePct}
-          isCurrency={false}
-          suffix="%"
-          changePct={data.savingsRateMomDelta}
-          changePeriodText="vs last month"
-          icon={PiggyBank}
-          delay={240}
-        />
+        <div className="relative">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input 
+            type="text" 
+            placeholder="Search instruments (e.g. RELIANCE)..." 
+            className="pl-9 pr-4 py-2 bg-slate-900/50 border border-slate-800 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 w-full md:w-80 transition-all"
+          />
+        </div>
       </div>
 
-      {/* ═══ Main Charts Row ═══ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Cash Flow Area Chart */}
-        <div className="lg:col-span-2">
-          <ChartCard
-            title="Cash Flow Dynamics"
-            subtitle="6-Month Income vs Expenses Comparison"
-            footerNote={`Net savings averaged ${avgSavings >= 0 ? "+" : ""}${formatCurrency(avgSavings, profile.currency)}/month across this period.`}
-            actions={
-              <div className="flex items-center gap-3 text-xs font-mono">
-                <span className="flex items-center gap-1.5 text-emerald-400">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />{" "}
-                  Income
-                </span>
-                <span className="flex items-center gap-1.5 text-rose-400">
-                  <span className="w-2 h-2 rounded-full bg-rose-400" /> Expenses
-                </span>
+      {/* ═══ Live Market Snapshot (KPIs) ═══ */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {marketData.map((market, idx) => {
+          const isPositive = (market.change_percent || 0) >= 0;
+          return (
+            <div key={market.symbol} className="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-slate-700 transition-colors animate-fadeInUp" style={{ animationDelay: `${idx * 0.1}s` }}>
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-2">
+                  <div className={`p-1.5 rounded bg-slate-800/50 ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {market.symbol.includes("VIX") ? <Activity className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
+                  </div>
+                  <h3 className="text-sm font-semibold text-slate-300">{market.symbol}</h3>
+                </div>
               </div>
-            }
-          >
-            <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={data.cashFlowHistory}
-                  margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
-                    </linearGradient>
-                    <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="#F43F5E" stopOpacity={0.0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="month" stroke="#64748B" fontSize={11} tickLine={false} />
-                  <YAxis
-                    stroke="#64748B"
-                    fontSize={11}
-                    tickLine={false}
-                    tickFormatter={(v) => `${CURRENCY_SYMBOLS[profile.currency] || "₹"}${v / 1000}k`}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#0a0a0a",
-                      borderColor: "rgba(255,255,255,0.08)",
-                      borderRadius: 12,
-                      backdropFilter: "blur(12px)",
-                    }}
-                    formatter={(val: any) => [
-                      `${CURRENCY_SYMBOLS[profile.currency] || "₹"}${Number(val).toLocaleString()}`,
-                      "",
-                    ]}
-                  />
-                  <Area type="monotone" dataKey="income" stroke="#10B981" strokeWidth={2.5} fill="url(#incomeGrad)" />
-                  <Area type="monotone" dataKey="expenses" stroke="#F43F5E" strokeWidth={2.5} fill="url(#expenseGrad)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </ChartCard>
-        </div>
-
-        {/* Spending by Category Donut */}
-        <div className="lg:col-span-1">
-          <ChartCard
-            title="Spending by Category"
-            subtitle="Current billing cycle distribution"
-            actions={
-              <NavLink to="/app/budgets" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors font-semibold">
-                View Budgets
-              </NavLink>
-            }
-          >
-            <div className="flex flex-col gap-4 w-full">
-              <div className="h-44 w-full relative flex items-center justify-center">
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-white tracking-tight">
+                  {market.ltp?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </div>
+                <div className={`flex items-center gap-1.5 text-sm font-medium ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                  <span>{isPositive ? '+' : ''}{market.change?.toFixed(2)}</span>
+                  <span>({isPositive ? '+' : ''}{market.change_percent?.toFixed(2)}%)</span>
+                </div>
+              </div>
+              
+              {/* Mini Sparkline */}
+              <div className="absolute bottom-0 left-0 right-0 h-12 opacity-20 group-hover:opacity-40 transition-opacity pointer-events-none">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#0a0a0a",
-                        borderColor: "rgba(255,255,255,0.08)",
-                        borderRadius: 12,
-                      }}
-                      formatter={(val: any) => [
-                        `${CURRENCY_SYMBOLS[profile.currency] || "₹"}${Number(val).toLocaleString()}`,
-                        "Spent",
-                      ]}
-                    />
-                    <Pie
-                      data={data.categorySpend.slice(0, 5)}
-                      dataKey="amount"
-                      nameKey="categoryName"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={75}
-                      paddingAngle={3}
-                    >
-                      {data.categorySpend.slice(0, 5).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                  </PieChart>
+                  <AreaChart data={generateMockChart()}>
+                    <defs>
+                      <linearGradient id={`grad-${idx}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={isPositive ? '#10B981' : '#F43F5E'} stopOpacity={0.8} />
+                        <stop offset="95%" stopColor={isPositive ? '#10B981' : '#F43F5E'} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <Area type="monotone" dataKey="value" stroke={isPositive ? '#10B981' : '#F43F5E'} fill={`url(#grad-${idx})`} strokeWidth={1.5} isAnimationActive={false} />
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
-
-              {/* Top categories breakdown */}
-              <div className="space-y-2">
-                {data.categorySpend.slice(0, 4).map((cat) => (
-                  <div key={cat.categoryId} className="text-xs space-y-1">
-                    <div className="flex justify-between items-center text-slate-300">
-                      <span className="flex items-center gap-1.5 truncate">
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-                        <span className="truncate">{cat.categoryName}</span>
-                      </span>
-                      <span className="font-mono font-medium">
-                        {formatCurrency(cat.amount, profile.currency)}
-                      </span>
-                    </div>
-                    <ProgressBar value={cat.amount} max={cat.budget || cat.amount} color={cat.color} size="sm" />
-                  </div>
-                ))}
-              </div>
             </div>
-          </ChartCard>
-        </div>
+          );
+        })}
       </div>
 
-      {/* ═══ AI Insights Card ═══ */}
-      <div className="glass-card rounded-2xl p-5 md:p-6 space-y-4 animate-fadeInUp">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-100">
-                Live AI Financial Signals
-              </h3>
-              <p className="text-xs text-slate-400">
-                Automated detections grounded in your daily cash telemetry
-              </p>
-            </div>
-          </div>
-          <NavLink
-            to="/app/insights"
-            className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors"
-          >
-            <span>Full Insights Feed</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </NavLink>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {insights.map((insight, idx) => {
-            const isExpanded = expandedInsightId === insight.id;
-            const borderColors = {
-              alert: "border-rose-500/25 bg-rose-950/15",
-              warning: "border-amber-500/25 bg-amber-950/15",
-              success: "border-emerald-500/25 bg-emerald-950/15",
-              info: "border-indigo-500/25 bg-indigo-950/15",
-            };
-
-            return (
-              <div
-                key={insight.id}
-                className={`p-4 rounded-xl border transition-all duration-300 ${borderColors[insight.severity]} space-y-2 animate-fadeInUp hover:translate-y-[-2px]`}
-                style={{ animationDelay: `${idx * 0.08}s` }}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <h4 className="text-xs font-bold text-slate-200 leading-snug">
-                    {insight.title}
-                  </h4>
-                </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  {insight.description}
-                </p>
-
-                <div className="pt-1 flex items-center justify-between text-xs">
-                  <button
-                    onClick={() => setExpandedInsightId(isExpanded ? null : insight.id)}
-                    className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium cursor-pointer transition-colors"
-                  >
-                    {isExpanded ? "Hide explanation" : "Why this alert?"}
-                  </button>
-                  {insight.actionPath && (
-                    <NavLink
-                      to={insight.actionPath}
-                      className="text-[11px] text-slate-300 hover:text-white flex items-center gap-0.5 transition-colors"
-                    >
-                      <span>{insight.actionLabel || "View"}</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </NavLink>
-                  )}
-                </div>
-
-                {isExpanded && (
-                  <div className="mt-2 p-2.5 bg-white/[0.03] rounded-lg border border-white/[0.06] text-[11px] text-slate-300 space-y-2 animate-fadeIn">
-                    <div>{insight.whyExplanation}</div>
-                    <CitationChip groundedData={insight.groundedData} />
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ═══ Recent Transactions & Upcoming Bills ═══ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Transactions Table */}
-        <div className="lg:col-span-2 glass-card rounded-2xl p-5 md:p-6 space-y-4 animate-fadeInUp">
+        {/* ═══ AI Market Outlook ═══ */}
+        <div className="lg:col-span-2 glass-card rounded-2xl p-6 space-y-5 relative overflow-hidden animate-fadeInUp delay-200">
+          <div className="absolute top-0 right-0 p-32 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+          
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                <span className="w-1 h-4 bg-indigo-500 rounded-full opacity-60" />
-                Recent Transactions
-              </h3>
-              <p className="text-xs text-slate-400 ml-3">
-                Real-time sync across connected accounts
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={openAddTxModal}
-                className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 text-xs font-semibold border border-white/[0.06] flex items-center gap-1 cursor-pointer transition-all"
-              >
-                <Plus className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Add</span>
-              </button>
-              <NavLink to="/app/transactions" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors font-semibold">
-                View All
-              </NavLink>
+            <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-emerald-400" />
+              AI Market Outlook
+            </h2>
+            <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+              Bullish Regime
             </div>
           </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-white/[0.06] text-slate-400 uppercase font-mono text-[10px]">
-                  <th className="pb-2.5 font-semibold">Merchant</th>
-                  <th className="pb-2.5 font-semibold">Date</th>
-                  <th className="pb-2.5 font-semibold">Category</th>
-                  <th className="pb-2.5 font-semibold text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.04]">
-                {data.recentTransactions.map((tx, i) => (
-                  <tr
-                    key={tx.id}
-                    onClick={() => openTxDetail(tx.id)}
-                    className="hover:bg-white/[0.03] transition-all cursor-pointer group animate-fadeInUp"
-                    style={{ animationDelay: `${i * 0.04}s` }}
-                  >
-                    <td className="py-2.5 pr-3">
-                      <div className="font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors truncate max-w-[180px]">
-                        {tx.merchant}
-                      </div>
-                      {tx.isAnomaly && (
-                        <span className="inline-block text-[9px] font-mono px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/25 animate-pulse-glow">
-                          Anomaly
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2.5 text-slate-400 font-mono whitespace-nowrap">
-                      {formatDate(tx.date, "MMM d")}
-                    </td>
-                    <td className="py-2.5 text-slate-400 capitalize truncate max-w-[120px]">
-                      {tx.categoryId.replace("cat-", "").replace("-", " ")}
-                    </td>
-                    <td className="py-2.5 text-right font-mono font-medium">
-                      <AmountText amount={tx.amount} colored />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          
+          <div className="prose prose-invert prose-sm max-w-none text-slate-300">
+            <p>
+              The broader market structure indicates a <strong className="text-emerald-400">strong bullish bias</strong> heading into the afternoon session. Institutional accumulation is visible in the IT and Banking sectors, while Auto remains neutral.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+            <div className="p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+              <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Directional Prob</div>
+              <div className="text-lg font-bold text-emerald-400">68% UP</div>
+            </div>
+            <div className="p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+              <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Volatility Exp</div>
+              <div className="text-lg font-bold text-amber-400">ELEVATED</div>
+            </div>
+            <div className="p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+              <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Breadth</div>
+              <div className="text-lg font-bold text-emerald-400">2.4 : 1</div>
+            </div>
+            <div className="p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+              <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Risk Level</div>
+              <div className="text-lg font-bold text-indigo-400">MODERATE</div>
+            </div>
           </div>
         </div>
 
-        {/* Upcoming Bills */}
-        <div className="lg:col-span-1 glass-card rounded-2xl p-5 md:p-6 space-y-4 animate-fadeInUp stagger-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                <span className="w-1 h-4 bg-amber-500 rounded-full opacity-60" />
-                Upcoming Bills
-              </h3>
-              <p className="text-xs text-slate-400 ml-3">Next 14 days auto-debits</p>
-            </div>
-            <NavLink to="/app/forecast" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors font-semibold">
-              Forecast
-            </NavLink>
+        {/* ═══ Watchlist / Top Movers ═══ */}
+        <div className="glass-card rounded-2xl p-6 space-y-4 animate-fadeInUp delay-300">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <Eye className="w-4 h-4 text-indigo-400" />
+              Watchlist Action
+            </h2>
+            <button className="text-xs text-indigo-400 hover:text-indigo-300 font-medium">View All</button>
           </div>
-
+          
           <div className="space-y-3">
-            {data.upcomingBills.map((bill, i) => (
-              <div
-                key={bill.id}
-                className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:border-white/[0.08] flex items-center justify-between gap-3 transition-all duration-200 animate-fadeInUp"
-                style={{ animationDelay: `${i * 0.06}s` }}
-              >
-                <div className="flex items-center gap-2.5 truncate">
-                  <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shrink-0">
-                    <Calendar className="w-4 h-4" />
+            {[
+              { sym: 'HDFCBANK', ltp: '1,432.50', chg: '+1.2%', trend: 'up' },
+              { sym: 'RELIANCE', ltp: '2,945.10', chg: '+0.8%', trend: 'up' },
+              { sym: 'INFY', ltp: '1,420.75', chg: '-0.4%', trend: 'down' },
+              { sym: 'TCS', ltp: '3,890.00', chg: '+0.1%', trend: 'up' },
+              { sym: 'ZOMATO', ltp: '184.20', chg: '+4.5%', trend: 'up', alert: true },
+            ].map(stock => (
+              <div key={stock.sym} className="flex justify-between items-center group cursor-pointer hover:bg-slate-800/30 p-2 -mx-2 rounded-lg transition-colors">
+                <div>
+                  <div className="text-sm font-bold text-slate-200 flex items-center gap-2">
+                    {stock.sym}
+                    {stock.alert && <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="Volume Spike Alert" />}
                   </div>
-                  <div className="truncate">
-                    <div className="text-xs font-semibold text-slate-200 truncate">
-                      {bill.merchant}
-                    </div>
-                    <div className="text-[10px] text-slate-400">
-                      Due in{" "}
-                      <span className="text-amber-400 font-medium">
-                        {bill.daysAway} days
-                      </span>{" "}
-                      ({formatDate(bill.dueDate, "MMM d")})
-                    </div>
-                  </div>
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wider">EQ • NSE</div>
                 </div>
-                <div className="text-xs font-mono font-bold text-white shrink-0">
-                  {formatCurrency(bill.amount, profile.currency)}
+                <div className="text-right">
+                  <div className="text-sm font-mono text-slate-200">{stock.ltp}</div>
+                  <div className={`text-[11px] font-bold ${stock.trend === 'up' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {stock.chg}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-
-          {/* Ask Copilot Mini Card */}
-          <div className="p-4 rounded-xl glass-card-accent text-xs space-y-2">
-            <div className="flex items-center gap-2 text-emerald-400 font-semibold">
-              <Bot className="w-4 h-4" />
-              <span>Need help planning cash flow?</span>
-            </div>
-            <p className="text-[11px] text-slate-300">
-              Ask Copilot if you can afford additional expenses before your next
-              paycheck on the 1st.
-            </p>
-            <NavLink
-              to="/app/copilot"
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 pt-1 transition-colors group"
-            >
-              <span>Ask AI Copilot</span>
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-            </NavLink>
-          </div>
         </div>
       </div>
-      <ShareInsightModal 
-        isOpen={shareOpen} 
-        onClose={() => setShareOpen(false)} 
-        title="Financial Milestone Achieved!" 
-        insight={`I've maintained a positive cash flow with a liquid balance of ${data ? formatCurrency(data.liquid_capital) : '$0'} this month using Finpluse's AI forecasting!`}
-      />
+
+      {/* ═══ Portfolio & Personal Finance (Secondary Module) ═══ */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeInUp delay-400">
+        <div className="glass-card rounded-2xl p-6 border border-slate-800/50 hover:border-slate-700/50 transition-colors cursor-pointer group">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="p-2 bg-indigo-500/10 rounded-lg inline-block mb-3 group-hover:bg-indigo-500/20 transition-colors">
+                <PieChart className="w-5 h-5 text-indigo-400" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-100">Portfolio Analytics</h3>
+              <p className="text-sm text-slate-400 mt-1">Track your investments, sector exposure, and AI portfolio risk analysis.</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-indigo-400 transition-colors" />
+          </div>
+        </div>
+        
+        <NavLink to="/app/transactions" className="glass-card rounded-2xl p-6 border border-slate-800/50 hover:border-slate-700/50 transition-colors cursor-pointer group">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="p-2 bg-emerald-500/10 rounded-lg inline-block mb-3 group-hover:bg-emerald-500/20 transition-colors">
+                <Activity className="w-5 h-5 text-emerald-400" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-100">Personal Finance</h3>
+              <p className="text-sm text-slate-400 mt-1">Manage bank statements, track expenses, and view cash-flow forecasts.</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-emerald-400 transition-colors" />
+          </div>
+        </NavLink>
+      </div>
+
     </div>
   );
 };
