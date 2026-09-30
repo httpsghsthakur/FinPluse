@@ -1,6 +1,6 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, Activity, Globe, BarChart2 } from 'lucide-react';
-import { cn } from '../../lib/utils/cn';
+import { cn } from '../lib/utils/cn';
 
 const INDICES = [
   { name: 'NIFTY 50', value: '22,512.45', change: '+124.30', changePct: '+0.55%', isUp: true },

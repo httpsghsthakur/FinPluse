@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrainCircuit, Target, Zap, AlertTriangle, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
-import { cn } from '../../lib/utils/cn';
+import { cn } from '../lib/utils/cn';
 
 const PREDICTIONS = [
   { symbol: 'RELIANCE', name: 'Reliance Ind.', probability: 78, direction: 'UP', volatility: 'LOW', expectedReturn: '+2.4%', timeframe: '5 Days' },

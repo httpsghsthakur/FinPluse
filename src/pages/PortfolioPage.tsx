@@ -1,6 +1,6 @@
 import React from 'react';
 import { Briefcase, TrendingUp, TrendingDown, PieChart, ArrowUpRight, Plus } from 'lucide-react';
-import { cn } from '../../lib/utils/cn';
+import { cn } from '../lib/utils/cn';
 
 const POSITIONS = [
   { symbol: 'RELIANCE', name: 'Reliance Ind.', qty: 50, avg: 2850.50, ltp: 2945.10, pnl: '+4,730.00', pnlPct: '+3.32%', isUp: true },
