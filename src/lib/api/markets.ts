@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "./config";
+import { API_CONFIG } from "./config";
 
 export interface MarketOverview {
   symbol: string;
@@ -15,7 +15,7 @@ export interface MarketDataResponse {
 export const marketApi = {
   async getOverview(): Promise<MarketDataResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/markets/overview`, {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/markets/overview`, {
         headers: {
           'Accept': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`

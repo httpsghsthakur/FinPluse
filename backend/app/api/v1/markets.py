@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Dict, Any, Optional
 
-from app.api.deps import get_current_active_user
+from app.api.deps import get_current_user
 from app.db.models.user import User
 from app.services.market_data.upstox import UpstoxProvider
 from app.services.technical_analysis import TechnicalAnalysisEngine
@@ -12,7 +12,7 @@ provider = UpstoxProvider()
 
 
 @router.get("/overview")
-async def get_market_overview(current_user: User = Depends(get_current_active_user)):
+async def get_market_overview(current_user: User = Depends(get_current_user)):
     """Get high-level market overview (NIFTY, BANK NIFTY, SENSEX, INDIA VIX)."""
     # Key Indian indices
     indices = [
@@ -45,7 +45,7 @@ async def get_market_overview(current_user: User = Depends(get_current_active_us
 @router.get("/stocks/search")
 async def search_stocks(
     q: str = Query(..., min_length=2),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Search for stocks by symbol or name."""
     results = await provider.search_instruments(q)
@@ -55,7 +55,7 @@ async def search_stocks(
 @router.get("/stocks/{instrument_key}")
 async def get_stock_quote(
     instrument_key: str,
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Get live quote and info for a specific stock."""
     quote = await provider.get_market_quote(instrument_key)
@@ -72,7 +72,7 @@ async def get_stock_candles(
     from_date: str = Query(..., description="Format: YYYY-MM-DD"),
     to_date: str = Query(..., description="Format: YYYY-MM-DD"),
     include_technicals: bool = Query(False),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_user)
 ):
     """Get historical candles and optionally compute technical indicators."""
     candles = await provider.get_historical_candles(instrument_key, interval, from_date, to_date)

@@ -1,5 +1,5 @@
 """Technical Analysis Engine."""
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import numpy as np
 
 class TechnicalAnalysisEngine:
