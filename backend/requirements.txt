@@ -55,4 +55,3 @@ PyJWT>=2.8.0
 
 prophet
 openai
-pyqlib
