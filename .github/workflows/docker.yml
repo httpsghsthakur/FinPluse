@@ -21,6 +21,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Validate workflow expression syntax
+        run: |
+          if grep -n '\\$\\{{' .github/workflows/docker.yml; then
+            echo "Found escaped GitHub expression syntax (\\$\\{{ ... }}). Use \${{ ... }} instead."
+            exit 1
+          fi
         
       - name: Set lower case repository name
         run: |
