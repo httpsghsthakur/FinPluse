@@ -1,4 +1,4 @@
-﻿# Finpluse Backend Production Dependencies
+# Finpluse Backend Production Dependencies
 # ==========================================
 
 # Web Framework & Server
@@ -55,3 +55,4 @@ PyJWT>=2.8.0
 
 prophet
 openai
+pyqlib
