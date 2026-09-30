@@ -14,13 +14,15 @@ def test_sql_validator_rejects_non_select(agent):
     sql = "UPDATE transactions SET amount = 0 WHERE user_id = :user_id"
     with pytest.raises(SQLValidatorError) as exc:
         agent._validate_sql(sql)
-    assert "MUST BE A SELECT" in str(exc.value).upper() or "FORBIDDEN KEYWORD" in str(exc.value).upper()
+    error = str(exc.value).upper()
+    assert "MUST BE A SELECT" in error or "FORBIDDEN KEYWORD" in error
 
 def test_sql_validator_rejects_drop(agent):
     sql = "DROP TABLE transactions;"
     with pytest.raises(SQLValidatorError) as exc:
         agent._validate_sql(sql)
-    assert "FORBIDDEN KEYWORD" in str(exc.value).upper() or "SELECT" in str(exc.value).upper()
+    error = str(exc.value).upper()
+    assert "FORBIDDEN KEYWORD" in error or "SELECT" in error
 
 def test_sql_validator_rejects_wrong_table(agent):
     sql = "SELECT * FROM users;"
