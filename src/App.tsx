@@ -13,6 +13,7 @@ import { CopilotPage } from "./pages/CopilotPage";
 import { SimulatorPage } from "./pages/SimulatorPage";
 import { InsightsPage } from "./pages/InsightsPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { ComingSoonPage } from "./pages/ComingSoonPage";
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -55,6 +56,15 @@ export default function App() {
             }
           >
             <Route index element={<DashboardPage />} />
+            <Route path="markets" element={<ComingSoonPage />} />
+            <Route path="research" element={<ComingSoonPage />} />
+            <Route path="predictions" element={<ComingSoonPage />} />
+            <Route path="portfolio" element={<ComingSoonPage />} />
+            <Route path="paper-trading" element={<ComingSoonPage />} />
+            <Route path="screener" element={<ComingSoonPage />} />
+            <Route path="alerts" element={<ComingSoonPage />} />
+            <Route path="statements" element={<ComingSoonPage />} />
+            
             <Route path="copilot" element={<CopilotPage />} />
             <Route path="transactions" element={<TransactionsPage />} />
             <Route path="budgets" element={<BudgetsPage />} />
