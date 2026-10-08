@@ -14,10 +14,9 @@ class UpstoxProvider(MarketDataProvider):
     def __init__(self):
         self.base_url = "https://api.upstox.com/v2"
         self.token = os.environ.get("UPSTOX_ANALYTICS_TOKEN")
-        self.headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.token}"
-        }
+        self.headers = {"Accept": "application/json"}
+        if self.token:
+            self.headers["Authorization"] = f"Bearer {self.token}"
         
     async def get_live_price(self, instrument_key: str) -> Optional[float]:
         """Fetch live price using Upstox market quote API."""
@@ -29,7 +28,7 @@ class UpstoxProvider(MarketDataProvider):
     async def get_market_quote(self, instrument_key: str) -> Optional[Dict[str, Any]]:
         """Fetch full market quote."""
         if not self.token:
-            logger.warning("Upstox Analytics Token is missing.")
+            logger.warning("Upstox Analytics Token is missing for market quote API.")
             return None
             
         url = f"{self.base_url}/market-quote/quotes"
@@ -48,12 +47,11 @@ class UpstoxProvider(MarketDataProvider):
             return None
 
     async def get_historical_candles(self, instrument_key: str, interval: str, from_date: str, to_date: str) -> List[Dict[str, Any]]:
-        """Fetch historical candles."""
-        if not self.token:
-            logger.warning("Upstox Analytics Token is missing.")
-            return []
-            
+        """Fetch historical candles. Note: Upstox v2 historical-candle endpoint does not require auth."""
         url = f"{self.base_url}/historical-candle/{instrument_key}/{interval}/{to_date}/{from_date}"
+        headers = {"Accept": "application/json"}
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
         
         try:
             async with httpx.AsyncClient() as client:

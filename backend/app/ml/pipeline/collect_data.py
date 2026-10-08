@@ -44,6 +44,13 @@ INSTRUMENT_NAMES = {
     "NSE_EQ|INE467B01029": "TCS",
 }
 
+YFINANCE_TICKERS = {
+    "NSE_EQ|INE002A01018": "RELIANCE.NS",
+    "NSE_EQ|INE040A01034": "HDFCBANK.NS",
+    "NSE_EQ|INE009A01021": "INFY.NS",
+    "NSE_EQ|INE467B01029": "TCS.NS",
+}
+
 PIPELINE_DIR = os.path.dirname(os.path.abspath(__file__))
 RAW_DATA_DIR = os.path.join(PIPELINE_DIR, "data", "raw")
 SAMPLE_DATA_DIR = os.path.join(PIPELINE_DIR, "data", "sample")
@@ -53,22 +60,22 @@ SYNTHETIC_OUTPUT_PATH = os.path.join(SAMPLE_DATA_DIR, "synthetic_market_dataset.
 
 
 class DataCollector:
-    """Ingests market data from Upstox or generates labeled synthetic samples."""
+    """Ingests market data from Upstox, yfinance (Kaggle-equivalent), or generates labeled synthetic samples."""
 
-    def __init__(self, synthetic: bool = False, output_path: str | None = None):
-        self.synthetic = synthetic
-        self.output_path = output_path or (SYNTHETIC_OUTPUT_PATH if synthetic else REAL_OUTPUT_PATH)
+    def __init__(self, synthetic: bool = False, source: str = "upstox", output_path: str | None = None):
+        self.synthetic = synthetic or (source == "synthetic")
+        self.source = "synthetic" if self.synthetic else source
+        self.output_path = output_path or (SYNTHETIC_OUTPUT_PATH if self.synthetic else REAL_OUTPUT_PATH)
         self.provider = None
 
-        if not self.synthetic:
+        if self.source == "upstox":
             token = os.environ.get("UPSTOX_ANALYTICS_TOKEN")
             if not token or not token.strip():
-                raise ValueError(
-                    "CRITICAL: UPSTOX_ANALYTICS_TOKEN environment variable is missing or empty. "
-                    "Cannot collect real market data from Upstox API. "
-                    "Set UPSTOX_ANALYTICS_TOKEN in your environment/backend/.env, "
-                    "or pass '--synthetic' to generate a clearly labeled sample dataset."
+                logger.info(
+                    "UPSTOX_ANALYTICS_TOKEN is not set. Using Upstox v2 public historical candles endpoint."
                 )
+            else:
+                logger.info("Using authenticated Upstox Provider.")
             # Lazy import to avoid unnecessary dependency if only synthetic is needed
             from app.services.market_data.upstox import UpstoxProvider
             self.provider = UpstoxProvider()
@@ -80,7 +87,7 @@ class DataCollector:
 
         candles = await self.provider.get_historical_candles(
             instrument_key=instrument_key,
-            interval="1d",
+            interval="day",
             from_date=start_date,
             to_date=end_date,
         )
@@ -170,7 +177,55 @@ class DataCollector:
         full_df.sort_index(inplace=True)
         return full_df
 
-    async def run(self, days_back: int = 2000) -> pd.DataFrame:
+    def collect_yfinance(
+        self,
+        start_date: str = "2000-01-01",
+        end_date: str | None = None,
+    ) -> pd.DataFrame:
+        """Download long-range historical data via yfinance (Kaggle/NSE equivalent)."""
+        import yfinance as yf
+        if end_date is None:
+            end_date = datetime.now().strftime("%Y-%m-%d")
+
+        all_dfs: List[pd.DataFrame] = []
+        for instrument, ticker in YFINANCE_TICKERS.items():
+            sym = INSTRUMENT_NAMES.get(instrument, instrument)
+            logger.info(f"Downloading historical data for {sym} ({ticker}) via yfinance: {start_date} -> {end_date}")
+            df = yf.download(ticker, start=start_date, end=end_date, progress=False)
+            if df.empty:
+                logger.warning(f"No yfinance data returned for {ticker}")
+                continue
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = [col[0] for col in df.columns]
+
+            df = df.rename(columns={
+                "Open": "open", "High": "high", "Low": "low", "Close": "close", "Volume": "volume"
+            })
+            df["instrument_key"] = instrument
+            df.index = pd.to_datetime(df.index).tz_localize(None).normalize()
+            df.index.name = "timestamp"
+            cols = ["open", "high", "low", "close", "volume", "instrument_key"]
+            df = df[[c for c in cols if c in df.columns]].dropna()
+            date_min = df.index.min().strftime('%Y-%m-%d')
+            date_max = df.index.max().strftime('%Y-%m-%d')
+            logger.info(f"Retrieved {len(df)} rows for {sym} ({ticker}) [{date_min} to {date_max}]")
+            all_dfs.append(df)
+
+        if not all_dfs:
+            raise RuntimeError("Failed to download data for any tickers via yfinance.")
+
+        master_df = pd.concat(all_dfs)
+        os.makedirs(os.path.dirname(self.output_path), exist_ok=True)
+        master_df.to_parquet(self.output_path, engine="pyarrow")
+        logger.info(f"Successfully saved {len(master_df)} multi-year rows to {self.output_path}")
+        return master_df
+
+    async def run(
+        self,
+        days_back: int = 2000,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> pd.DataFrame:
         """Run collection pipeline."""
         if self.synthetic:
             master_df = self.generate_synthetic_data(days_back=days_back)
@@ -182,11 +237,16 @@ class DataCollector:
             )
             return master_df
 
+        if self.source == "yfinance":
+            start_str = start_date or (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
+            end_str = end_date or datetime.now().strftime("%Y-%m-%d")
+            return self.collect_yfinance(start_date=start_str, end_date=end_str)
+
         # Real collection from Upstox
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=days_back)
-        start_str = start_date.strftime("%Y-%m-%d")
-        end_str = end_date.strftime("%Y-%m-%d")
+        end_dt = datetime.now() if not end_date else datetime.strptime(end_date, "%Y-%m-%d")
+        start_dt = (end_dt - timedelta(days=days_back)) if not start_date else datetime.strptime(start_date, "%Y-%m-%d")
+        start_str = start_dt.strftime("%Y-%m-%d")
+        end_str = end_dt.strftime("%Y-%m-%d")
 
         logger.info(f"Starting historical Upstox data collection: {start_str} to {end_str}")
 
@@ -240,6 +300,13 @@ class DataCollector:
 def main():
     parser = argparse.ArgumentParser(description="Collect market data or generate labeled sample data.")
     parser.add_argument(
+        "--source",
+        type=str,
+        choices=["upstox", "yfinance", "synthetic"],
+        default="upstox",
+        help="Market data source: upstox (broker API), yfinance (multi-year history), or synthetic.",
+    )
+    parser.add_argument(
         "--synthetic",
         action="store_true",
         help="Generate synthetic sample market data labeled explicitly as SYNTHETIC in data/sample/.",
@@ -251,6 +318,18 @@ def main():
         help="Number of historical days to fetch or simulate (default: 2000).",
     )
     parser.add_argument(
+        "--start-date",
+        type=str,
+        default=None,
+        help="Start date YYYY-MM-DD for historical ingestion.",
+    )
+    parser.add_argument(
+        "--end-date",
+        type=str,
+        default=None,
+        help="End date YYYY-MM-DD for historical ingestion.",
+    )
+    parser.add_argument(
         "--output",
         type=str,
         default=None,
@@ -258,8 +337,16 @@ def main():
     )
     args = parser.parse_args()
 
-    collector = DataCollector(synthetic=args.synthetic, output_path=args.output)
-    asyncio.run(collector.run(days_back=args.days_back))
+    collector = DataCollector(
+        synthetic=args.synthetic,
+        source="synthetic" if args.synthetic else args.source,
+        output_path=args.output,
+    )
+    asyncio.run(collector.run(
+        days_back=args.days_back,
+        start_date=args.start_date,
+        end_date=args.end_date,
+    ))
 
 
 if __name__ == "__main__":

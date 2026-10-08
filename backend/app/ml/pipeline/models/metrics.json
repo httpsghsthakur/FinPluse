@@ -1,61 +1,61 @@
 {
   "dataset_split": {
-    "train_rows": 3424,
+    "train_rows": 15270,
     "train_date_range": [
-      "2022-01-21",
-      "2025-05-02"
+      "2000-10-06",
+      "2016-12-13"
     ],
-    "val_rows": 736,
+    "val_rows": 3472,
     "val_date_range": [
-      "2025-05-05",
-      "2026-01-15"
+      "2016-12-14",
+      "2020-06-24"
     ],
-    "test_rows": 736,
+    "test_rows": 3476,
     "test_date_range": [
-      "2026-01-16",
-      "2026-09-30"
+      "2020-06-25",
+      "2023-12-21"
     ]
   },
   "xgboost_3class_test_metrics": {
-    "accuracy": 0.3491847826086957,
-    "macro_avg_precision": 0.35397855360133573,
-    "macro_avg_recall": 0.3350706664371288,
-    "macro_avg_f1": 0.2650790924265123,
+    "accuracy": 0.3345799769850403,
+    "macro_avg_precision": 0.34989978543627814,
+    "macro_avg_recall": 0.35372343761414055,
+    "macro_avg_f1": 0.3246622718706271,
     "per_class": {
       "DOWN": {
-        "precision": 0.3211009174311927,
-        "recall": 0.15486725663716813,
-        "f1_score": 0.208955223880597,
-        "support": 226
+        "precision": 0.27984009137635635,
+        "recall": 0.546875,
+        "f1_score": 0.3702304495655459,
+        "support": 896
       },
       "NEUTRAL": {
-        "precision": 0.3888888888888889,
-        "recall": 0.056451612903225805,
-        "f1_score": 0.09859154929577464,
-        "support": 248
+        "precision": 0.4005212858384014,
+        "recall": 0.3424962852897474,
+        "f1_score": 0.36924309171005204,
+        "support": 1346
       },
       "UP": {
-        "precision": 0.35194585448392557,
-        "recall": 0.7938931297709924,
-        "f1_score": 0.4876905041031653,
-        "support": 262
+        "precision": 0.3693379790940767,
+        "recall": 0.17179902755267423,
+        "f1_score": 0.2345132743362832,
+        "support": 1234
       }
     },
     "confusion_matrix": [
       [
-        35,
-        5,
-        186
+        490,
+        280,
+        126
       ],
       [
-        37,
-        14,
-        197
+        649,
+        461,
+        236
       ],
       [
-        37,
-        17,
-        208
+        612,
+        410,
+        212
       ]
     ],
     "classes": [
@@ -67,96 +67,96 @@
   "naive_baselines": {
     "majority_class": {
       "class_chosen": "UP",
-      "accuracy": 0.35597826086956524,
-      "macro_f1": 0.17501670006680026
+      "accuracy": 0.35500575373993093,
+      "macro_f1": 0.17466383581033262
     },
     "momentum_5d_persistence": {
-      "accuracy": 0.36141304347826086,
-      "macro_f1": 0.3613025081813332
+      "accuracy": 0.34321058688147293,
+      "macro_f1": 0.33536285927702636
     }
   },
   "binary_up_vs_not_up_experiment": {
-    "accuracy": 0.5285326086956522,
+    "accuracy": 0.6395281933256617,
     "classification_report": {
       "Not-UP": {
-        "precision": 0.6480186480186481,
-        "recall": 0.5864978902953587,
-        "f1-score": 0.6157253599114064,
-        "support": 474.0
+        "precision": 0.6446329336063177,
+        "recall": 0.9830508474576272,
+        "f1-score": 0.7786610139551317,
+        "support": 2242.0
       },
       "UP": {
-        "precision": 0.36156351791530944,
-        "recall": 0.42366412213740456,
-        "f1-score": 0.39015817223198596,
-        "support": 262.0
+        "precision": 0.3333333333333333,
+        "recall": 0.01539708265802269,
+        "f1-score": 0.02943454686289698,
+        "support": 1234.0
       },
-      "accuracy": 0.5285326086956522,
+      "accuracy": 0.6395281933256617,
       "macro avg": {
-        "precision": 0.5047910829669787,
-        "recall": 0.5050810062163816,
-        "f1-score": 0.5029417660716962,
-        "support": 736.0
+        "precision": 0.48898313346982547,
+        "recall": 0.4992239650578249,
+        "f1-score": 0.4040477804090143,
+        "support": 3476.0
       },
       "weighted avg": {
-        "precision": 0.5460468489872966,
-        "recall": 0.5285326086956522,
-        "f1-score": 0.5354283447320475,
-        "support": 736.0
+        "precision": 0.5341197843724677,
+        "recall": 0.6395281933256617,
+        "f1-score": 0.5126813072831473,
+        "support": 3476.0
       }
     }
   },
   "top_features": [
     {
-      "feature": "sma_200",
-      "importance": 0.1034402996301651
+      "feature": "volatility_20d",
+      "importance": 0.11657842248678207
     },
     {
       "feature": "bollinger_lower",
-      "importance": 0.09705879539251328
-    },
-    {
-      "feature": "bollinger_upper",
-      "importance": 0.09345521032810211
+      "importance": 0.09770235419273376
     },
     {
       "feature": "sma_50",
-      "importance": 0.08987157046794891
+      "importance": 0.08753950893878937
+    },
+    {
+      "feature": "sma_200",
+      "importance": 0.08547060191631317
+    },
+    {
+      "feature": "bollinger_upper",
+      "importance": 0.08199504017829895
     },
     {
       "feature": "sma_20",
-      "importance": 0.08336929231882095
-    },
-    {
-      "feature": "macd_signal",
-      "importance": 0.0796990692615509
-    },
-    {
-      "feature": "rsi_14",
-      "importance": 0.07886946201324463
-    },
-    {
-      "feature": "macd",
-      "importance": 0.07502830028533936
-    },
-    {
-      "feature": "volatility_20d",
-      "importance": 0.07377761602401733
+      "importance": 0.0776822566986084
     },
     {
       "feature": "return_5d",
-      "importance": 0.06704393029212952
+      "importance": 0.07632088661193848
     },
     {
       "feature": "return_20d",
-      "importance": 0.05912812799215317
+      "importance": 0.07348383218050003
+    },
+    {
+      "feature": "macd",
+      "importance": 0.06750601530075073
+    },
+    {
+      "feature": "macd_signal",
+      "importance": 0.06557919085025787
     },
     {
       "feature": "return_1d",
-      "importance": 0.05357670783996582
+      "importance": 0.06122953072190285
+    },
+    {
+      "feature": "rsi_14",
+      "importance": 0.05535642430186272
     },
     {
       "feature": "relative_volume",
-      "importance": 0.04568156972527504
+      "importance": 0.05355599895119667
     }
   ],
   "limitations": "Financial asset prices exhibit near-random walk behavior over short horizons. Technical indicators (SMA, RSI, MACD, Bollinger) provide weak standalone signal. Predictive performance near naive baselines is expected and mathematically honest. This model is a proof-of-concept pipeline, not a profitable trading strategy."

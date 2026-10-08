@@ -105,6 +105,9 @@ logs/
 # ── Large Generated ML Datasets & Scratch Files ───────────────────────────────
 backend/data/raw/*.csv
 backend/data/processed/*.parquet
+backend/app/ml/pipeline/data/raw/*.parquet
+backend/app/ml/pipeline/data/processed/*.parquet
+!backend/app/ml/pipeline/data/sample/*.parquet
 !backend/data/**/.gitkeep
 backend/scratch/
 scratch/
