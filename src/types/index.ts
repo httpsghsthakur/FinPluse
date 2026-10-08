@@ -53,6 +53,33 @@ export interface Budget {
   predictedSpend: number;
 }
 
+export interface BudgetCategory {
+  categoryId: string;
+  categoryName: string;
+  icon: string;
+  color: string;
+  spent: number;
+  budget: number;
+  remaining: number;
+  aiPacingAlert?: string;
+}
+
+export interface BudgetSummary {
+  totalBudget: number;
+  totalSpent: number;
+  pctUsed: number;
+  totalRemaining: number;
+  daysLeftInMonth: number;
+}
+
+export interface GoalBoost {
+  id: string;
+  goalId: string;
+  amount: number;
+  source: string;
+  reason?: string;
+}
+
 export interface Goal {
   id: string;
   name: string;

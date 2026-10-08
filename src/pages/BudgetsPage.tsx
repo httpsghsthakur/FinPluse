@@ -21,7 +21,7 @@ export const BudgetsPage: React.FC = () => {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [sum, bList] = await Promise.all([api.getBudgetSummary(), api.getBudgets()]);
+      const [sum, bList] = await Promise.all([api.getBudgetSummary(), api.getBudgetCategories()]);
       setSummary(sum);
       setBudgets(bList);
     } catch (e) { console.error(e); }

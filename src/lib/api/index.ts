@@ -1,12 +1,15 @@
 import {
   Account,
   Budget,
+  BudgetCategory,
+  BudgetSummary,
   Category,
   ChatMessage,
   DashboardSummary,
   ForecastEvent,
   ForecastPoint,
   Goal,
+  GoalBoost,
   Insight,
   Scenario,
   ScenarioResult,
@@ -1409,6 +1412,79 @@ class ApiClient {
   async exportAllDataJSON(): Promise<string> {
     const data = await this.exportAllData();
     return JSON.stringify(data, null, 2);
+  }
+
+  // ── Budgets & Allocations ────────────────────────────────────
+  async getBudgetCategories(): Promise<BudgetCategory[]> {
+    const data = loadStoredData();
+    const categories = data.categories.filter((c) => (c.monthlyBudget ?? 0) > 0);
+    const startOfCurrentMonth = startOfMonth(new Date());
+
+    return categories.map((cat) => {
+      const budget = cat.monthlyBudget ?? 0;
+      const spent = data.transactions
+        .filter((t) => t.categoryId === cat.id && isAfter(parseISO(t.date), startOfCurrentMonth) && t.amount < 0)
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      const remaining = Math.max(0, budget - spent);
+      const pct = budget > 0 ? (spent / budget) * 100 : 0;
+      let aiPacingAlert: string | undefined;
+      if (pct > 90) aiPacingAlert = `You have spent ${pct.toFixed(0)}% of your ${cat.name} budget. Pacing suggests exceeding by month-end.`;
+
+      return {
+        categoryId: cat.id,
+        categoryName: cat.name,
+        icon: cat.icon,
+        color: cat.color,
+        spent,
+        budget,
+        remaining,
+        aiPacingAlert,
+      };
+    });
+  }
+
+  async getBudgetSummary(): Promise<BudgetSummary> {
+    const budgets = await this.getBudgetCategories();
+    const totalBudget = budgets.reduce((acc, b) => acc + b.budget, 0);
+    const totalSpent = budgets.reduce((acc, b) => acc + b.spent, 0);
+    const totalRemaining = Math.max(0, totalBudget - totalSpent);
+    const pctUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+    const now = new Date();
+    const daysInMonth = getDaysInMonth(now);
+    const daysLeftInMonth = Math.max(0, daysInMonth - now.getDate());
+
+    return {
+      totalBudget,
+      totalSpent,
+      pctUsed,
+      totalRemaining,
+      daysLeftInMonth,
+    };
+  }
+
+  // ── Goal Boosts ──────────────────────────────────────────────
+  async getGoalBoosts(): Promise<GoalBoost[]> {
+    return [
+      {
+        id: "boost-1",
+        goalId: "goal-1",
+        amount: 2500,
+        source: "Dining Surplus",
+        reason: "You are ₹2,500 under budget in dining this cycle.",
+      },
+      {
+        id: "boost-2",
+        goalId: "goal-2",
+        amount: 5000,
+        source: "Cash Flow Buffer",
+        reason: "Excess liquid buffer detected in savings account.",
+      },
+    ];
+  }
+
+  async applyGoalBoost(boostId: string): Promise<boolean> {
+    await delay(150);
+    return true;
   }
 }
 
