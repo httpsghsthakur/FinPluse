@@ -70,11 +70,15 @@ htmlcov/
 # ── Environment & Secrets (NEVER COMMIT CREDENTIALS) ──────────────────────────
 .env
 .env.*
+backend/.env
+backend/.env.*
 !.env.example
+!backend/.env.example
 !.env.test
 *.pem
 *.key
 *.cert
+*.joblib
 
 # ── Databases & Persistence ───────────────────────────────────────────────────
 *.db
@@ -110,3 +114,5 @@ check_*.py
 print_*.py
 test_*.py
 !backend/tests/**
+backend/tests/**/__pycache__/
+backend/tests/**/*.pyc
