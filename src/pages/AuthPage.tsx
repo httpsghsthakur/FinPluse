@@ -5,7 +5,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../components/layout/AuthProvider";
 
 export const AuthPage: React.FC = () => {
-  const { session } = useAuth();
+  const { session, signInDemo } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -168,7 +168,24 @@ export const AuthPage: React.FC = () => {
             )}
           </button>
 
-          <div className="text-center mt-4">
+          <div className="relative my-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/[0.08]" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-[#0e0e10] px-2 text-[#71717a]">Or explore preview</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => signInDemo()}
+            className="w-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 py-2.5 rounded-xl text-xs font-semibold hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2"
+          >
+            ⚡ Continue as Guest (Demo Mode)
+          </button>
+
+          <div className="text-center mt-3">
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}

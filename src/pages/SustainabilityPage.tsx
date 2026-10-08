@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../components/layout/AuthProvider';
 
 
@@ -10,7 +10,8 @@ export const SustainabilityPage: React.FC = () => {
   useEffect(() => {
     const fetchFootprint = async () => {
       try {
-        const res = await fetch(import.meta.env.VITE_API_BASE_URL + '/sustainability/footprint', {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+        const res = await fetch(baseUrl + '/sustainability/footprint', {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const json = await res.json();

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAuth } from '../layout/AuthProvider';
 
 export const BiometricCollector: React.FC = () => {
@@ -53,7 +53,8 @@ export const BiometricCollector: React.FC = () => {
       };
 
       try {
-        await fetch(import.meta.env.VITE_API_BASE_URL + '/security/biometrics/log', {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+        await fetch(baseUrl + '/security/biometrics/log', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

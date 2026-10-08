@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Finpluse v2 -- Federated Learning Frontend Client
  * 
  * Mock implementation that would typically use TensorFlow.js 
@@ -19,7 +19,8 @@ export class FederatedClient {
     console.log("[FL] Submitting deltas to server...");
     
     try {
-      const res = await fetch(import.meta.env.VITE_API_BASE_URL + '/federated/submit_deltas', {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+      const res = await fetch(baseUrl + '/federated/submit_deltas', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
