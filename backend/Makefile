@@ -1,58 +1,47 @@
-.PHONY: dev install docker-up docker-down seed train evaluate pipeline lint test
+# ==============================================================================
+# FinPulse AI — Backend ML Pipeline & Development Automation
+# ==============================================================================
 
-# Development
-dev:
-	uvicorn app.main:app --reload --port 8000
+.PHONY: help collect collect-synthetic features targets train backtest pipeline pipeline-synthetic test lint
 
-install:
-	pip install -r requirements.txt
+help:
+	@echo "Available targets:"
+	@echo "  make pipeline            Run full pipeline using available real/sample data"
+	@echo "  make pipeline-synthetic  Run full pipeline with fresh synthetic sample data"
+	@echo "  make collect             Collect market data from Upstox (requires token)"
+	@echo "  make collect-synthetic   Generate labeled synthetic sample market data"
+	@echo "  make features            Generate point-in-time technical features"
+	@echo "  make targets             Generate forward 5-day return targets"
+	@echo "  make train               Train XGBoost classifier & baselines"
+	@echo "  make backtest            Run out-of-sample vectorized backtest"
+	@echo "  make test                Run pytest test suite"
 
-# Docker
-docker-up:
-	docker-compose up -d
+collect:
+	python -m app.ml.pipeline.collect_data
 
-docker-down:
-	docker-compose down
+collect-synthetic:
+	python -m app.ml.pipeline.collect_data --synthetic
 
-docker-logs:
-	docker-compose logs -f backend
+features:
+	python -m app.ml.pipeline.build_features
 
-# Database
-seed:
-	python -c "import asyncio; from app.api.v1.admin import seed_database; from app.db.session import async_session_factory; asyncio.run(seed_database(async_session_factory()))"
+targets:
+	python -m app.ml.pipeline.build_targets
 
-# ML Training (Phase 2+)
 train:
-	python -m training.pipeline
+	python -m app.ml.pipeline.train_xgboost
 
-train-classifier:
-	python -m training.classifiers.train_classifier
+backtest:
+	python -m app.ml.pipeline.backtest
 
-train-anomaly:
-	python -m training.anomaly.train_anomaly
+pipeline: features targets train backtest
+	@echo "Pipeline execution completed successfully."
 
-train-forecast:
-	python -m training.forecasting.train_forecast
-
-evaluate:
-	python -m training.evaluation.evaluate
-
-pipeline:
-	python -m training.pipeline
-
-# Data
-generate-data:
-	python -m scripts.generate_demo_data
-
-# Quality
-lint:
-	ruff check app/ training/
+pipeline-synthetic: collect-synthetic features targets train backtest
+	@echo "Synthetic pipeline execution completed successfully."
 
 test:
-	pytest tests/ -v --cov=app
+	pytest tests/
 
-test-api:
-	pytest tests/test_api/ -v
-
-test-ml:
-	pytest tests/test_ml/ -v
+test-pipeline:
+	pytest tests/test_ml/
