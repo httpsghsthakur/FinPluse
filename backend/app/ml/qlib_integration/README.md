@@ -1,14 +1,11 @@
-# Microsoft Qlib Integration
+# Microsoft Qlib Integration (Experimental Scaffolding / Vendored)
 
-We have successfully integrated the models and feature handlers from [Microsoft/qlib](https://github.com/microsoft/qlib).
+> [!IMPORTANT]
+> **Attribution & Third-Party Code Notice**:
+> The code in this module (`models/`, `data/`) is directly adapted and vendored from **Microsoft Qlib** ([github.com/microsoft/qlib](https://github.com/microsoft/qlib)), Copyright © Microsoft Corporation, licensed under the MIT License (see [LICENSE](file:///c:/Users/gt643/Downloads/finpilot---ai-financial-copilot/backend/app/ml/qlib_integration/LICENSE)).
+> **This is NOT original work created for this project.**
 
-## Contents
-- `models/`: Contains state-of-the-art deep learning architectures (ALSTM, Transformer, GRU, TabNet) adapted from Qlib.
-- `data/`: Contains feature extractors (Alpha158, Alpha360).
-- `wrapper.py`: Provides the bridge between Qlib models and the FinPulse AI pipeline.
+## Status: Experimental Scaffold
+This module was imported as an experimental exploration for deep neural network architectures (ALSTM, Transformer) and alpha factor libraries (Alpha158/Alpha360). 
 
-## Usage
-The `pyqlib` package has been added to `requirements.txt`.
-You can now substitute the default `XGBoost` pipeline with advanced recurrent models like `ALSTM` or `TransformerModel` by utilizing the `QlibModelTrainer` in `train_xgboost.py`.
-
-*Note: Since Qlib relies on C-extensions, executing these models locally on Windows with AppLocker enabled may be restricted. Run these via GitHub Actions or Docker.*
+It is **NOT** part of the core FinPulse AI production pipeline (which uses the custom, point-in-time XGBoost pipeline in `backend/app/ml/pipeline/`). `pyqlib` is intentionally not required for running the core application.

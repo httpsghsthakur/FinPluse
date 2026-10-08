@@ -1,6 +1,6 @@
 {
-  "name": "Finpluse - AI Financial Copilot",
-  "description": "Self-hosted AI personal finance copilot with custom-built ML cash-flow forecasting, intelligent spending categorization, what-if Monte Carlo simulator, and grounded financial reasoning engine.",
+  "name": "FinPulse AI - Market Intelligence & Financial Copilot",
+  "description": "AI financial platform combining point-in-time quantitative market intelligence with personal finance management.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }
