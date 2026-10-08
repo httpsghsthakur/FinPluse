@@ -1,0 +1,163 @@
+{
+  "dataset_split": {
+    "train_rows": 3424,
+    "train_date_range": [
+      "2022-01-21",
+      "2025-05-02"
+    ],
+    "val_rows": 736,
+    "val_date_range": [
+      "2025-05-05",
+      "2026-01-15"
+    ],
+    "test_rows": 736,
+    "test_date_range": [
+      "2026-01-16",
+      "2026-09-30"
+    ]
+  },
+  "xgboost_3class_test_metrics": {
+    "accuracy": 0.3491847826086957,
+    "macro_avg_precision": 0.35397855360133573,
+    "macro_avg_recall": 0.3350706664371288,
+    "macro_avg_f1": 0.2650790924265123,
+    "per_class": {
+      "DOWN": {
+        "precision": 0.3211009174311927,
+        "recall": 0.15486725663716813,
+        "f1_score": 0.208955223880597,
+        "support": 226
+      },
+      "NEUTRAL": {
+        "precision": 0.3888888888888889,
+        "recall": 0.056451612903225805,
+        "f1_score": 0.09859154929577464,
+        "support": 248
+      },
+      "UP": {
+        "precision": 0.35194585448392557,
+        "recall": 0.7938931297709924,
+        "f1_score": 0.4876905041031653,
+        "support": 262
+      }
+    },
+    "confusion_matrix": [
+      [
+        35,
+        5,
+        186
+      ],
+      [
+        37,
+        14,
+        197
+      ],
+      [
+        37,
+        17,
+        208
+      ]
+    ],
+    "classes": [
+      "DOWN",
+      "NEUTRAL",
+      "UP"
+    ]
+  },
+  "naive_baselines": {
+    "majority_class": {
+      "class_chosen": "UP",
+      "accuracy": 0.35597826086956524,
+      "macro_f1": 0.17501670006680026
+    },
+    "momentum_5d_persistence": {
+      "accuracy": 0.36141304347826086,
+      "macro_f1": 0.3613025081813332
+    }
+  },
+  "binary_up_vs_not_up_experiment": {
+    "accuracy": 0.5285326086956522,
+    "classification_report": {
+      "Not-UP": {
+        "precision": 0.6480186480186481,
+        "recall": 0.5864978902953587,
+        "f1-score": 0.6157253599114064,
+        "support": 474.0
+      },
+      "UP": {
+        "precision": 0.36156351791530944,
+        "recall": 0.42366412213740456,
+        "f1-score": 0.39015817223198596,
+        "support": 262.0
+      },
+      "accuracy": 0.5285326086956522,
+      "macro avg": {
+        "precision": 0.5047910829669787,
+        "recall": 0.5050810062163816,
+        "f1-score": 0.5029417660716962,
+        "support": 736.0
+      },
+      "weighted avg": {
+        "precision": 0.5460468489872966,
+        "recall": 0.5285326086956522,
+        "f1-score": 0.5354283447320475,
+        "support": 736.0
+      }
+    }
+  },
+  "top_features": [
+    {
+      "feature": "sma_200",
+      "importance": 0.1034402996301651
+    },
+    {
+      "feature": "bollinger_lower",
+      "importance": 0.09705879539251328
+    },
+    {
+      "feature": "bollinger_upper",
+      "importance": 0.09345521032810211
+    },
+    {
+      "feature": "sma_50",
+      "importance": 0.08987157046794891
+    },
+    {
+      "feature": "sma_20",
+      "importance": 0.08336929231882095
+    },
+    {
+      "feature": "macd_signal",
+      "importance": 0.0796990692615509
+    },
+    {
+      "feature": "rsi_14",
+      "importance": 0.07886946201324463
+    },
+    {
+      "feature": "macd",
+      "importance": 0.07502830028533936
+    },
+    {
+      "feature": "volatility_20d",
+      "importance": 0.07377761602401733
+    },
+    {
+      "feature": "return_5d",
+      "importance": 0.06704393029212952
+    },
+    {
+      "feature": "return_20d",
+      "importance": 0.05912812799215317
+    },
+    {
+      "feature": "return_1d",
+      "importance": 0.05357670783996582
+    },
+    {
+      "feature": "relative_volume",
+      "importance": 0.04568156972527504
+    }
+  ],
+  "limitations": "Financial asset prices exhibit near-random walk behavior over short horizons. Technical indicators (SMA, RSI, MACD, Bollinger) provide weak standalone signal. Predictive performance near naive baselines is expected and mathematically honest. This model is a proof-of-concept pipeline, not a profitable trading strategy."
+}
