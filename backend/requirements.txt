@@ -55,3 +55,4 @@ tzlocal>=5.4.0
 # Forecasting & Copilot LLM Client
 prophet>=1.1.5
 openai>=1.30.0
+google-genai>=2.29.0

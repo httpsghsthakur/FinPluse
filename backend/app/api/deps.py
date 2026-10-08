@@ -80,3 +80,20 @@ async def get_current_user(
             detail=f"Authentication error: {str(e)}",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+security_optional = HTTPBearer(auto_error=False)
+
+
+async def get_optional_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security_optional)] = None,
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """Optional user resolver that allows public exploration without 401."""
+    if credentials is None:
+        return None
+    try:
+        return await get_current_user(credentials=credentials, db=db)
+    except Exception:
+        return None
+

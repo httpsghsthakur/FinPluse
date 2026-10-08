@@ -14,6 +14,7 @@ import { SimulatorPage } from "./pages/SimulatorPage";
 import { InsightsPage } from "./pages/InsightsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { ComingSoonPage } from "./pages/ComingSoonPage";
+import { ScreenerPage } from "./pages/ScreenerPage";
 import { MarketsPage } from "./pages/MarketsPage";
 import { ResearchPage } from "./pages/ResearchPage";
 import { PredictionsPage } from "./pages/PredictionsPage";
@@ -65,7 +66,7 @@ export default function App() {
             <Route path="predictions" element={<PredictionsPage />} />
             <Route path="portfolio" element={<PortfolioPage />} />
             <Route path="paper-trading" element={<ComingSoonPage />} />
-            <Route path="screener" element={<ComingSoonPage />} />
+            <Route path="screener" element={<ScreenerPage />} />
             <Route path="alerts" element={<ComingSoonPage />} />
             <Route path="statements" element={<ComingSoonPage />} />
             

@@ -6,6 +6,10 @@ import re
 import time
 import asyncio
 import json
+import logging
+import os
+from google import genai
+from google.genai import types
 from datetime import datetime, date, timedelta
 from typing import Any
 
@@ -150,15 +154,12 @@ async def _compute_financials(db: AsyncSession, current_user: User) -> dict:
     }
 
 
-async def _call_llm_if_available(query: str, data: dict, personality: str) -> str | None:
-    """Call external LLM (OpenAI / Groq / Gemini) if API key is present."""
-    api_key = os.getenv("OPENAI_API_KEY") or os.getenv("GROQ_API_KEY")
+async def _call_llm_if_available(query: str, data: dict, personality: str) -> str:
+    """Call external LLM (Gemini) if API key is present."""
+    api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        return None
-
-    is_groq = bool(os.getenv("GROQ_API_KEY") and not os.getenv("OPENAI_API_KEY"))
-    endpoint = "https://api.groq.com/openai/v1/chat/completions" if is_groq else "https://api.openai.com/v1/chat/completions"
-    model = "llama-3.3-70b-versatile" if is_groq else os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        logging.getLogger(__name__).warning("GEMINI_API_KEY is not set.")
+        return "I need a GEMINI_API_KEY to process your request. Please set it in your environment variables."
 
     goals_str = ", ".join([f"{g.name} (Saved: ₹{g.current_amount:,.0f}/₹{g.target_amount:,.0f})" for g in data.get("goals", [])])
     recent_merchants = ", ".join([f"{t.merchant}: ₹{abs(t.amount):,.0f}" for t in data.get("recent_txs", [])[:8]])
@@ -179,181 +180,40 @@ Tone requirement: {personality} (precise, structured, deeply grounded in data wi
 Always format numbers with Indian Rupee formatting (₹). Give concrete recommendations with exact math."""
 
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            res = await client.post(
-                endpoint,
-                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json={
-                    "model": model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": query}
-                    ],
-                    "temperature": 0.2,
-                }
+        client = genai.Client(api_key=api_key)
+        response = await asyncio.to_thread(
+            client.models.generate_content,
+            model="gemini-2.5-flash",
+            contents=query,
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                temperature=0.2,
             )
-            if res.status_code == 200:
-                result = res.json()
-                return result["choices"][0]["message"]["content"]
+        )
+        return response.text
     except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(f"LLM API call failed: {e}")
-    
-    return None
+        logging.getLogger(__name__).warning(f"Gemini API call failed: {e}")
+        return f"Sorry, I encountered an error communicating with the AI service: {e}"
 
 
 async def _generate_response(query: str, data: dict, personality: str) -> dict:
     """Generate a high-precision, grounded response using real data and smart reasoning."""
     q = query.lower()
 
-    # 1. Try LLM if configured
+    # 1. Call Gemini LLM
     llm_output = await _call_llm_if_available(query, data, personality)
-    if llm_output:
-        return {
-            "content": llm_output,
-            "groundedData": [
-                {"label": "Checking Liquidity", "value": _format_currency(data["checking"])},
-                {"label": "Savings Cushion", "value": _format_currency(data["savings"])},
-                {"label": "Cash Runway", "value": f"{data['runway']} Months"},
-                {"label": "Monthly Burn", "value": _format_currency(data["monthly_burn"])},
-            ],
-            "confidence": "High",
-            "quickActions": [
-                {"label": "Simulate in What-If", "action": "navigate", "path": "/app/simulator"},
-                {"label": "View Forecast", "action": "navigate", "path": "/app/forecast"},
-            ],
-        }
-
-    # 2. Affordability reasoning with dynamic price extraction
-    if any(k in q for k in ("afford", "buy", "purchase", "spend on", "can i get", "take a trip", "should i get")):
-        amount, item_name = _extract_amount_and_item(query)
-        post_checking = data["checking"] - amount
-        post_liquid = data["liquid"] - amount
-        safe = post_checking >= 25000.0 or (post_liquid > 50000.0 and post_checking >= 5000.0)
-        remaining_runway = round(post_liquid / max(data["monthly_burn"], 1.0), 1)
-
-        recommendation = (
-            f"**Comfortable to proceed.** Even after spending {_format_currency(amount)}, you retain "
-            f"**{_format_currency(post_checking)}** in primary checking and **{remaining_runway} months** of total liquid emergency runway."
-            if safe else
-            f"**Exercise caution.** Spending {_format_currency(amount)} would reduce your checking cushion to "
-            f"**{_format_currency(post_checking)}**, which is below your safety threshold. Consider staging the purchase or using savings surplus."
-        )
-
-        return {
-            "content": (
-                f"### Affordability Assessment: {item_name} ({_format_currency(amount)})\n\n"
-                f"1. **Checking Liquidity**: {_format_currency(data['checking'])}\n"
-                f"2. **Projected Balance After Purchase**: **{_format_currency(post_checking)}**\n"
-                f"3. **Remaining Emergency Runway**: **{remaining_runway} Months**\n"
-                f"4. **Strategic Verdict**: {recommendation}"
-            ),
-            "groundedData": [
-                {"label": "Estimated Price", "value": _format_currency(amount)},
-                {"label": "Checking Liquidity", "value": _format_currency(data["checking"])},
-                {"label": "Post-Purchase Buffer", "value": _format_currency(post_checking)},
-                {"label": "Post-Purchase Runway", "value": f"{remaining_runway} Mo"},
-            ],
-            "confidence": "High",
-            "quickActions": [
-                {"label": "Simulate in What-If", "action": "navigate", "path": "/app/simulator"},
-                {"label": "Check Cash Runway", "action": "navigate", "path": "/app/forecast"},
-            ],
-        }
-
-    # 3. Spending & Outflow breakdown
-    if any(k in q for k in ("spending", "spend", "expenses", "budget", "outflows", "zomato", "swiggy", "amazon", "groceries", "dining")):
-        top_cats = sorted(data["cat_spend"].items(), key=lambda x: x[1], reverse=True)[:4]
-        cat_lines = "\n".join([f"- **{cat}**: **{_format_currency(amt)}**" for cat, amt in top_cats]) or "- **General Expenses**: **₹18,500.00**"
-
-        return {
-            "content": (
-                f"### 30-Day Expense & Category Breakdown\n\n"
-                f"Total Outflows: **{_format_currency(data['total_expense'])}** across your connected accounts.\n\n"
-                f"**Top Spending Areas**:\n{cat_lines}\n\n"
-                f"- **Current Savings Rate**: **{data['savings_rate']:.1f}%**\n"
-                f"- **Monthly Burn Rate**: **{_format_currency(data['monthly_burn'])}**"
-            ),
-            "groundedData": [
-                {"label": "30-Day Outflows", "value": _format_currency(data["total_expense"])},
-                {"label": "Dining Outflow", "value": _format_currency(data["dining_spend"])},
-                {"label": "Monthly Burn Rate", "value": _format_currency(data["monthly_burn"])},
-                {"label": "Savings Rate", "value": _format_pct(data["savings_rate"])},
-            ],
-            "confidence": "High",
-            "quickActions": [
-                {"label": "Open Budgets", "action": "navigate", "path": "/app/budgets"},
-                {"label": "Inspect Ledger", "action": "navigate", "path": "/app/transactions"},
-            ],
-        }
-
-    # 4. Net Worth & Liquidity
-    if any(k in q for k in ("net worth", "runway", "balance", "liquid", "savings", "how much do i have")):
-        return {
-            "content": (
-                f"### Financial Health & Liquidity Diagnostic\n\n"
-                f"- **Total Net Worth**: **{_format_currency(data['net_worth'])}**\n"
-                f"- **Liquid Cash Reserves**: **{_format_currency(data['liquid'])}** (Checking: {_format_currency(data['checking'])}, Savings: {_format_currency(data['savings'])})\n"
-                f"- **Credit Card Liabilities**: **{_format_currency(abs(data['credit']))}**\n"
-                f"- **Liquid Runway**: **{data['runway']} Months** at current burn of {_format_currency(data['monthly_burn'])}/mo."
-            ),
-            "groundedData": [
-                {"label": "Net Worth", "value": _format_currency(data["net_worth"])},
-                {"label": "Liquid Reserves", "value": _format_currency(data["liquid"])},
-                {"label": "Monthly Burn", "value": _format_currency(data["monthly_burn"])},
-                {"label": "Runway", "value": f"{data['runway']} Months"},
-            ],
-            "confidence": "High",
-            "quickActions": [
-                {"label": "Open Forecast", "action": "navigate", "path": "/app/forecast"},
-            ],
-        }
-
-    # 5. Goals
-    if any(k in q for k in ("goal", "target", "save for", "emergency fund", "vacation")):
-        goal_lines = []
-        for g in data["goals"]:
-            pct = round((g.current_amount / max(g.target_amount, 1.0)) * 100)
-            goal_lines.append(f"- **{g.name}**: **{_format_currency(g.current_amount)}** of **{_format_currency(g.target_amount)}** ({pct}%)")
-        
-        return {
-            "content": (
-                f"### Active Savings Goals Progress\n\n"
-                + ("\n".join(goal_lines) if goal_lines else "- Emergency Fund (6 Months): Active") +
-                f"\n\n*Strategic Tip*: Automating ₹5,000 from monthly surplus directly into High-Yield Savings accelerates goal completion by ~2.5 months."
-            ),
-            "groundedData": [
-                {"label": "Active Goals", "value": str(len(data["goals"]))},
-                {"label": "Total Saved", "value": _format_currency(sum(g.current_amount for g in data["goals"]))},
-            ],
-            "confidence": "High",
-            "quickActions": [
-                {"label": "Manage Goals", "action": "navigate", "path": "/app/goals"},
-            ],
-        }
-
-    # 6. Default intelligent synthesis
+    
     return {
-        "content": (
-            f"### FinPilot AI Ledger Intelligence\n\n"
-            f"- **Net Worth**: **{_format_currency(data['net_worth'])}**\n"
-            f"- **Liquid Reserves**: **{_format_currency(data['liquid'])}** ({data['runway']} months runway)\n"
-            f"- **30-Day Outflow**: **{_format_currency(data['total_expense'])}** (Burn: {_format_currency(data['monthly_burn'])}/mo)\n\n"
-            f"You can ask me questions like:\n"
-            f"- *'Can I afford a new iPhone 16 Pro?'*\n"
-            f"- *'What is my monthly burn rate and runway?'*\n"
-            f"- *'Break down my dining and grocery spending.'*\n"
-            f"- *'How can I hit my emergency fund goal faster?'*"
-        ),
+        "content": llm_output,
         "groundedData": [
-            {"label": "Net Worth", "value": _format_currency(data["net_worth"])},
-            {"label": "Liquid Cash", "value": _format_currency(data["liquid"])},
+            {"label": "Checking Liquidity", "value": _format_currency(data["checking"])},
+            {"label": "Savings Cushion", "value": _format_currency(data["savings"])},
+            {"label": "Cash Runway", "value": f"{data['runway']} Months"},
             {"label": "Monthly Burn", "value": _format_currency(data["monthly_burn"])},
-            {"label": "Runway", "value": f"{data['runway']} Mo"},
         ],
         "confidence": "High",
         "quickActions": [
-            {"label": "Explore Simulator", "action": "navigate", "path": "/app/simulator"},
+            {"label": "Simulate in What-If", "action": "navigate", "path": "/app/simulator"},
             {"label": "View Forecast", "action": "navigate", "path": "/app/forecast"},
         ],
     }

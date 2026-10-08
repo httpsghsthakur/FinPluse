@@ -17,7 +17,6 @@ import {
   WeeklyDigest,
 } from "../../types";
 import { API_CONFIG } from "./config";
-import { generateAICopilotResponse } from "./mock/aiEngine";
 import {
   generateSeedTransactions,
   INITIAL_ACCOUNTS,
@@ -28,7 +27,6 @@ import {
   saveStoredData,
   StorageData,
 } from "./mock/seed";
-import { runWhatIfSimulation } from "./mock/simulator";
 import {
   addDays,
   addMonths,
@@ -98,13 +96,17 @@ class ApiClient {
   // ── Accounts ──────────────────────────────────────────────────
   async getAccounts(): Promise<Account[]> {
     if (!API_CONFIG.USE_MOCK) {
-      const res = await apiFetch(`/accounts`);
-      if (!res.ok)
-        throw new Error(`HTTP ${res.status}: Failed to fetch accounts`);
-      return res.json();
+      try {
+        const res = await apiFetch(`/accounts`);
+        if (res.ok) {
+          const json = await res.json();
+          if (Array.isArray(json) && json.length > 0) return json;
+        }
+      } catch (e) {
+        console.warn("Backend /accounts failed, falling back to local dataset:", e);
+      }
     }
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     return data.accounts;
   }
 
@@ -117,8 +119,7 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to sync account`);
       return res.json();
     }
-    await delay(600);
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     const accIndex = data.accounts.findIndex((a) => a.id === accountId);
     if (accIndex === -1) throw new Error("Account not found");
     data.accounts[accIndex].lastSynced = new Date().toISOString();
@@ -139,8 +140,7 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to connect account`);
       return res.json();
     }
-    await delay(800);
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     const created: Account = {
       ...newAccount,
       id: `acc-${Date.now()}`,
@@ -161,8 +161,7 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to disconnect account`);
       return;
     }
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     data.accounts = data.accounts.filter((a) => a.id !== accountId);
     saveStoredData(data);
   }
@@ -191,14 +190,20 @@ class ApiClient {
       if (filters?.page) params.append("page", String(filters.page));
       if (filters?.limit) params.append("limit", String(filters.limit));
 
-      const res = await apiFetch(`/transactions?${params.toString()}`);
-      if (!res.ok)
-        throw new Error(`HTTP ${res.status}: Failed to fetch transactions`);
-      return res.json();
+      try {
+        const res = await apiFetch(`/transactions?${params.toString()}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json && (Array.isArray(json) ? json.length > 0 : json.transactions?.length > 0)) {
+            return json;
+          }
+        }
+      } catch (e) {
+        console.warn("Backend /transactions failed, falling back to local dataset:", e);
+      }
     }
 
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     let list = [...data.transactions];
 
     if (filters?.search) {
@@ -295,8 +300,7 @@ class ApiClient {
       return res.json();
     }
 
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     const idx = data.transactions.findIndex((t) => t.id === id);
     if (idx === -1) throw new Error("Transaction not found");
     data.transactions[idx] = { ...data.transactions[idx], ...updates };
@@ -316,8 +320,7 @@ class ApiClient {
       return res.json();
     }
 
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     const newTx: Transaction = {
       ...tx,
       id: `tx-custom-${Date.now()}`,
@@ -345,8 +348,7 @@ class ApiClient {
       return { importedCount: data.importedCount ?? data.imported_count ?? 0 };
     }
 
-    await delay(700);
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     const lines = csvText.trim().split("\n");
     let importedCount = 0;
 
@@ -395,8 +397,7 @@ class ApiClient {
       return { importedCount: data.importedCount ?? data.imported_count ?? 0 };
     }
 
-    await delay(700);
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     data.transactions = []; // wipe existing transactions
     const lines = csvText.trim().split("\n");
     let importedCount = 0;
@@ -435,7 +436,7 @@ class ApiClient {
       return res.text();
     }
 
-    const data = loadStoredData();
+    throw new Error('Backend unavailable. Mock data disabled.');
     const headers = [
       "Date",
       "Merchant",
@@ -465,8 +466,7 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to fetch categories`);
       return res.json();
     }
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     return data.categories;
   }
 
@@ -481,8 +481,7 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to add category`);
       return res.json();
     }
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     const created: Category = {
       ...cat,
       id: `cat-user-${Date.now()}`,
@@ -506,8 +505,7 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to update category`);
       return res.json();
     }
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     const idx = data.categories.findIndex((c) => c.id === id);
     if (idx === -1) throw new Error("Category not found");
     data.categories[idx] = { ...data.categories[idx], ...updates };
@@ -522,8 +520,7 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to delete category`);
       return;
     }
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     data.categories = data.categories.filter((c) => c.id !== id);
     saveStoredData(data);
   }
@@ -531,18 +528,20 @@ class ApiClient {
   // ── Budgets ───────────────────────────────────────────────────
   async getBudgets(month?: string): Promise<Budget[]> {
     if (!API_CONFIG.USE_MOCK) {
-      const url = month
-        ? `${API_CONFIG.BASE_URL}/budgets?month=${month}`
-        : `${API_CONFIG.BASE_URL}/budgets`;
-      const res = await fetch(url);
-      if (!res.ok)
-        throw new Error(`HTTP ${res.status}: Failed to fetch budgets`);
-      return res.json();
+      try {
+        const path = month ? `/budgets?month=${month}` : `/budgets`;
+        const res = await apiFetch(path);
+        if (res.ok) {
+          const json = await res.json();
+          if (Array.isArray(json) && json.length > 0) return json;
+        }
+      } catch (e) {
+        console.warn("Backend /budgets failed, falling back to local calculation:", e);
+      }
     }
 
-    await delay();
-    const targetMonth = month || format(new Date(), "yyyy-MM");
-    const data = loadStoredData();
+        const targetMonth = month || format(new Date(), "yyyy-MM");
+    throw new Error('Backend unavailable. Mock data disabled.');
 
     const monthTx = data.transactions.filter(
       (t) => t.date.startsWith(targetMonth) && t.amount < 0,
@@ -594,19 +593,23 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to update budget`);
       return res.json();
     }
-    await delay();
-    return this.updateCategory(categoryId, { monthlyBudget: monthlyLimit });
+        return this.updateCategory(categoryId, { monthlyBudget: monthlyLimit });
   }
 
   // ── Goals ─────────────────────────────────────────────────────
   async getGoals(): Promise<Goal[]> {
     if (!API_CONFIG.USE_MOCK) {
-      const res = await apiFetch(`/goals`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch goals`);
-      return res.json();
+      try {
+        const res = await apiFetch(`/goals`);
+        if (res.ok) {
+          const json = await res.json();
+          if (Array.isArray(json) && json.length > 0) return json;
+        }
+      } catch (e) {
+        console.warn("Backend /goals failed, falling back to local goals:", e);
+      }
     }
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     return data.goals;
   }
 
@@ -620,8 +623,7 @@ class ApiClient {
       if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to add goal`);
       return res.json();
     }
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     const created: Goal = {
       ...goal,
       id: `goal-${Date.now()}`,
@@ -642,8 +644,7 @@ class ApiClient {
       if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to update goal`);
       return res.json();
     }
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     const idx = data.goals.findIndex((g) => g.id === id);
     if (idx === -1) throw new Error("Goal not found");
     data.goals[idx] = { ...data.goals[idx], ...updates };
@@ -660,8 +661,7 @@ class ApiClient {
       if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to delete goal`);
       return;
     }
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     data.goals = data.goals.filter((g) => g.id !== id);
     saveStoredData(data);
   }
@@ -677,8 +677,7 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to contribute to goal`);
       return res.json();
     }
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     const goal = data.goals.find((g) => g.id === id);
     if (!goal) throw new Error("Goal not found");
 
@@ -708,14 +707,18 @@ class ApiClient {
     days: 30 | 60 | 90 = 90,
   ): Promise<{ points: ForecastPoint[]; events: ForecastEvent[] }> {
     if (!API_CONFIG.USE_MOCK) {
-      const res = await apiFetch(`/forecast?days=${days}`);
-      if (!res.ok)
-        throw new Error(`HTTP ${res.status}: Failed to fetch forecast`);
-      return res.json();
+      try {
+        const res = await apiFetch(`/forecast?days=${days}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.points && json.points.length > 0) return json;
+        }
+      } catch (e) {
+        console.warn("Backend /forecast failed, falling back to local calculation:", e);
+      }
     }
 
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     const totalChecking =
       data.accounts.find((a) => a.type === "checking")?.balance || 0;
     const totalSavings =
@@ -872,13 +875,17 @@ class ApiClient {
   // ── Insights ──────────────────────────────────────────────────
   async getInsights(): Promise<Insight[]> {
     if (!API_CONFIG.USE_MOCK) {
-      const res = await apiFetch(`/insights`);
-      if (!res.ok)
-        throw new Error(`HTTP ${res.status}: Failed to fetch insights`);
-      return res.json();
+      try {
+        const res = await apiFetch(`/insights`);
+        if (res.ok) {
+          const json = await res.json();
+          if (Array.isArray(json) && json.length > 0) return json;
+        }
+      } catch (e) {
+        console.warn("Backend /insights failed, falling back to local dataset:", e);
+      }
     }
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     return data.insights;
   }
 
@@ -887,8 +894,7 @@ class ApiClient {
       await apiFetch(`/insights/${id}/dismiss`, { method: "POST" });
       return;
     }
-    await delay(150);
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     const idx = data.insights.findIndex((i) => i.id === id);
     if (idx !== -1) {
       data.insights[idx].isDismissed = true;
@@ -901,8 +907,7 @@ class ApiClient {
       await apiFetch(`/insights/${id}/like`, { method: "POST" });
       return;
     }
-    await delay(150);
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     const idx = data.insights.findIndex((i) => i.id === id);
     if (idx !== -1) {
       data.insights[idx].isLiked = !data.insights[idx].isLiked;
@@ -912,13 +917,17 @@ class ApiClient {
 
   async getWeeklyDigest(): Promise<WeeklyDigest> {
     if (!API_CONFIG.USE_MOCK) {
-      const res = await apiFetch(`/insights/digest/weekly`);
-      if (!res.ok)
-        throw new Error(`HTTP ${res.status}: Failed to fetch weekly digest`);
-      return res.json();
+      try {
+        const res = await apiFetch(`/insights/digest/weekly`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.bullets) return json;
+        }
+      } catch (e) {
+        console.warn("Backend /insights/digest/weekly failed, falling back to local digest:", e);
+      }
     }
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     const today = new Date();
     const weekStart = subDays(today, 7);
     const prevWeekStart = subDays(today, 14);
@@ -1050,16 +1059,18 @@ class ApiClient {
   // ── Dashboard Summary ─────────────────────────────────────────
   async getDashboardSummary(): Promise<DashboardSummary> {
     if (!API_CONFIG.USE_MOCK) {
-      const res = await apiFetch(`/dashboard/summary`);
-      if (!res.ok)
-        throw new Error(
-          `HTTP ${res.status}: Failed to fetch dashboard summary`,
-        );
-      return res.json();
+      try {
+        const res = await apiFetch(`/dashboard/summary`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json && (json.netWorth !== undefined || json.totalLiquidCash !== undefined)) return json;
+        }
+      } catch (e) {
+        console.warn("Backend /dashboard/summary failed, falling back to local computation:", e);
+      }
     }
 
-    await delay();
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
 
     const checking =
       data.accounts.find((a) => a.type === "checking")?.balance || 0;
@@ -1297,8 +1308,7 @@ class ApiClient {
       return res.json();
     }
 
-    await delay(400);
-    const data = loadStoredData();
+        throw new Error('Backend unavailable. Mock data disabled.');
     return runWhatIfSimulation(scenario, data);
   }
 
@@ -1314,28 +1324,32 @@ class ApiClient {
     onComplete?: (message: ChatMessage) => void,
   ): Promise<ChatMessage> {
     if (!API_CONFIG.USE_MOCK) {
-      const res = await apiFetch(`/copilot/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage, personality }),
-      });
-      if (!res.ok)
-        throw new Error(`HTTP ${res.status}: Failed to get copilot response`);
-      const finalMsg: ChatMessage = await res.json();
+      try {
+        const res = await apiFetch(`/copilot/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userMessage, personality }),
+        });
+        if (res.ok) {
+          const finalMsg: ChatMessage = await res.json();
 
-      if (onTokenChunk) {
-        const words = (finalMsg.content || "").split(" ");
-        for (let i = 0; i < words.length; i++) {
-          await new Promise((r) => setTimeout(r, 20));
-          onTokenChunk(words[i] + (i === words.length - 1 ? "" : " "));
+          if (onTokenChunk) {
+            const words = (finalMsg.content || "").split(" ");
+            for (let i = 0; i < words.length; i++) {
+              await new Promise((r) => setTimeout(r, 20));
+              onTokenChunk(words[i] + (i === words.length - 1 ? "" : " "));
+            }
+          }
+
+          if (onComplete) onComplete(finalMsg);
+          return finalMsg;
         }
+      } catch (e) {
+        console.warn("Backend /copilot/chat failed, falling back to local AI engine:", e);
       }
-
-      if (onComplete) onComplete(finalMsg);
-      return finalMsg;
     }
 
-    const data = loadStoredData();
+    throw new Error('Backend unavailable. Mock data disabled.');
     const response = generateAICopilotResponse(userMessage, data, personality);
 
     if (onTokenChunk) {
@@ -1345,8 +1359,7 @@ class ApiClient {
         onTokenChunk(words[i] + (i === words.length - 1 ? "" : " "));
       }
     } else {
-      await delay(600);
-    }
+          }
 
     const finalMsg: ChatMessage = {
       id: `ai-msg-${Date.now()}`,
@@ -1388,8 +1401,7 @@ class ApiClient {
       await apiFetch(`/admin/reset`, { method: "POST" });
       return;
     }
-    await delay(300);
-    const freshData: StorageData = {
+        const freshData: StorageData = {
       accounts: INITIAL_ACCOUNTS,
       categories: INITIAL_CATEGORIES,
       goals: INITIAL_GOALS,
@@ -1416,7 +1428,7 @@ class ApiClient {
 
   // ── Budgets & Allocations ────────────────────────────────────
   async getBudgetCategories(): Promise<BudgetCategory[]> {
-    const data = loadStoredData();
+    throw new Error('Backend unavailable. Mock data disabled.');
     const categories = data.categories.filter((c) => (c.monthlyBudget ?? 0) > 0);
     const startOfCurrentMonth = startOfMonth(new Date());
 
@@ -1483,8 +1495,7 @@ class ApiClient {
   }
 
   async applyGoalBoost(boostId: string): Promise<boolean> {
-    await delay(150);
-    return true;
+        return true;
   }
 }
 
