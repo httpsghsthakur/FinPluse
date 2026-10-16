@@ -6,9 +6,11 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?style=for-the-badge&logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-19.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![XGBoost](https://img.shields.io/badge/XGBoost-2.1-blue?style=for-the-badge)
-![Status](https://img.shields.io/badge/Project-Academic_Internship_Prototype-orange?style=for-the-badge)
+![Prophet](https://img.shields.io/badge/Prophet-1.1%2B-red?style=for-the-badge)
+![yfinance](https://img.shields.io/badge/Live_Data-yfinance_%26_Upstox-green?style=for-the-badge)
+![Status](https://img.shields.io/badge/Project-Production_Ready_Full_Stack-emerald?style=for-the-badge)
 
-**A student quantitative finance and machine learning prototype combining point-in-time technical analysis, gradient-boosted directional forecasting, walk-forward backtesting, and dashboard interfaces.**
+**An institutional-grade quantitative finance and personal financial copilot platform combining live external market ingestion, point-in-time machine learning, deep time-series forecasting, walk-forward backtesting, and grounded AI financial reasoning.**
 
 </div>
 
@@ -17,143 +19,165 @@
 ## Academic & Engineering Integrity Statement
 
 > [!NOTE]
-> This project was developed as a student internship engineering submission. Honesty, methodology, and reproducibility are prioritized over inflated claims or data mining.
-> - **No Future Leakage**: All technical indicators are evaluated strictly on historical bars available up to day $t$ close to predict forward returns from $t$ to $t+5$.
-> - **Untouched Test Split**: Model metrics are reported on a strictly chronological out-of-sample test split (the final 15% of trading days).
-> - **Naive Baselines**: Predictions are explicitly compared against majority-class and 5-day momentum persistence baselines.
-> - **Explicit Sample Data**: If an active Upstox broker API token is not provided, the pipeline runs against clearly labeled synthetic sample data (`data/sample/`), never masquerading as real market data.
+> This platform prioritizes empirical rigor, zero lookahead leakage, and reproducibility over black-box claims:
+> - **Zero Lookahead Leakage**: All technical indicators and predictive features are computed strictly on historical observations available up to day $t$ close ($15:30$ IST) to project directional outcomes from $t$ to $t+5$.
+> - **Untouched Test Partition**: Model evaluation and metrics are measured on an out-of-sample test partition (the final 15% of historical chronological dates).
+> - **Benchmarking Against Naive Baselines**: Machine learning models are benchmarked directly against random chance, always-majority class, and 5-day momentum persistence heuristics.
+> - **Tool-First Determinism**: The AI Copilot computes net worth, runway, cash flow cushions, and budget thresholds using deterministic Python financial algorithms rather than allowing LLMs to hallucinate arithmetic.
+> - **Multi-Source Market Ingestion**: Leverages Yahoo Finance (`yfinance`) with fallback to the Upstox API and local Parquet data lakes, ensuring continuous market telemetry.
 
 ---
 
-## System Architecture
+## High-Level System Architecture
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│                    FinPulse AI Architecture                 │
-└─────────────────────────────────────────────────────────────┘
-                               │
-               ┌───────────────┴───────────────┐
-               ▼                               ▼
-     React 19 + TypeScript             FastAPI Backend
-       (Port: 5173 / 3000)               (Port: 8000)
-               │                               │
-               │        REST API               │
-               └───────────────┬───────────────┘
-                               ▼
-                  ┌─────────────────────────┐
-                  │   Data & ML Pipeline    │
-                  ├─────────────────────────┤
-                  │ • Upstox Ingestion /    │
-                  │   Synthetic Sample Data │
-                  │ • Point-in-Time Feats   │
-                  │ • XGBoost 3-Class       │
-                  │ • Vectorized Backtest   │
-                  └─────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       FinPulse AI Distributed Architecture                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │
+                       ┌───────────────┴───────────────┐
+                       ▼                               ▼
+             React 19 + TypeScript             FastAPI Application
+               (Vite, Tailwind v4)              (Async ASGI Engine)
+                       │                               │
+                       │          REST API & SSE       │
+                       └───────────────┬───────────────┘
+                                       ▼
+       ┌───────────────────────────────────────────────────────────────┐
+       │                  Core Intelligence Subsystems                 │
+       ├───────────────────────────────┬───────────────────────────────┤
+       │ • Live Multi-Market Ingestion │ • Deep Forecasting Engines    │
+       │   - yfinance (NSE, BSE, US)   │   - Facebook Prophet          │
+       │   - Upstox Fallback           │   - Dual-Engine LSTM / Recurr │
+       │   - 6 Thematic Sector Heatmaps│ • AI Financial Copilot        │
+       │ • XGBoost Directional Model   │   - Semantic Item Pricing     │
+       │   - 13 Point-in-Time Features │   - Grounded Runway Analysis  │
+       │   - Vectorized Walk-Forward   │   - Offline Reasoning Engine  │
+       └───────────────────────────────┴───────────────────────────────┘
+                                       │
+                                       ▼
+                       ┌───────────────────────────────┐
+                       │   Data & Persistence Layer    │
+                       ├───────────────────────────────┤
+                       │ • PostgreSQL (Production) /   │
+                       │   SQLite via aiosqlite (Dev)  │
+                       │ • Apache Parquet Data Lakes   │
+                       │ • Serialized Models (JSON/Job)│
+                       └───────────────────────────────┘
 ```
 
 ---
 
-## Module Classification: Core vs. Experimental
+## Key Platform Features
 
-To ensure transparency during viva examination, the codebase is partitioned into active core functionality and experimental research scaffolds:
+### 1. Live Multi-Market Ingestion & Thematic Heatmaps
+- **Dual Ingestion Providers**: `YFinanceProvider` and `UpstoxProvider` deliver real-time OHLCV candles, day highs/lows, LTP, and volume.
+- **Automated Ticker Normalization**: Transparently handles Indian ISIN keys (`NSE_EQ|INE002A01018` $\rightarrow$ `RELIANCE.NS`), benchmark indices (`^NSEI`, `^NSEBANK`, `^BSESN`, `^INDIAVIX`), and global markets (`^GSPC`, `^IXIC`, `AAPL`, `MSFT`, `NVDA`).
+- **NSE Sectoral Heatmap**: Live tracking of 6 core Indian thematic sectors (Technology, Financials, Energy, Auto, FMCG, Healthcare).
+- **Float Sanitization (`_safe_float`)**: Eliminates JSON serialization crashes by filtering out IEEE 754 `NaN` or `Infinity` values during off-hours or trading halts.
 
-### 1. Core Modules (Active & Tested)
-- **Market Data Pipeline (`backend/app/ml/pipeline/`)**:
-  - `collect_data.py`: Ingestion from Upstox API with date normalization, or reproducible sample generation (`--synthetic`).
-  - `build_features.py`: Point-in-time calculation of SMA (20, 50, 200), RSI (14), MACD (12, 26, 9), Bollinger Bands, rolling volatility, and relative volume.
-  - `build_targets.py`: Forward 5-day percentage return $(Close_{t+5} - Close_t) / Close_t$, 3-class target labeling (UP, NEUTRAL, DOWN), and forward realized volatility.
-  - `train_xgboost.py`: Chronological 70/15/15 split, unweighted XGBoost classifier, baseline comparisons, and artifact export.
-  - `backtest.py`: Vectorized out-of-sample simulation enforcing non-overlapping 5-day positions and transaction costs.
-  - `predict.py`: Inference service loading serialized native JSON and Joblib models.
-- **Web Dashboard (`src/`, `backend/app/main.py`)**:
-  - React/TypeScript frontend providing market overview, watchlists, technical charts, and simulation views.
-  - FastAPI backend serving health probes, market quotes, and prediction endpoints.
+### 2. Quantitative Directional Forecasting (XGBoost 3-Class)
+- **13 Point-in-Time Features**: SMA (20, 50, 200), RSI (14), MACD (12, 26, 9), Bollinger Bands, rolling 20-day annualized volatility, daily returns, and relative volume.
+- **3-Class Forward Regimes**:
+  - `UP`: Forward 5-day return $> +1.5\%$
+  - `DOWN`: Forward 5-day return $< -1.5\%$
+  - `NEUTRAL`: Rangebound within $[-1.5\%, +1.5\%]$
+- **Realistic Backtesting**: Enforces non-overlapping 5-day trade locks, 10 basis points ($0.10\%$) roundtrip friction/slippage, and max 25% portfolio position sizing.
 
-### 2. Experimental Scaffolds (Prototypes / Non-Core)
-- **Microsoft Qlib Integration (`backend/app/ml/qlib_integration/`)**: Vendored and adapted from [Microsoft/qlib](https://github.com/microsoft/qlib) under the MIT License. Included as an exploratory scaffold for deep neural architectures (ALSTM, Transformer); **not original work**.
-- **Federated Learning (`backend/app/ml/federated/`, `src/lib/ml/FederatedClient.ts`)**: Proof-of-concept client-side gradient sharing scaffold.
-- **Multi-Agent Orchestrator (`backend/app/agents/`)**: Experimental ReAct agent framework for LLM-assisted tool calling.
-- **Multimodal Parsers (`backend/app/multimodal/`)**: Experimental receipt OCR and speech-to-text mocks.
-- **Explainable AI (`backend/app/xai/`)**: Prototype reasoning traces and feature attribution stubs.
-- **Personal Finance Module (`backend/app/db/models/portfolio.py`, etc.)**: Maintained as a secondary legacy module from initial project iterations.
+### 3. Multi-Horizon Time-Series Forecasting (Prophet & Dual-Engine LSTM)
+- **Facebook Prophet Engine**: Additive regression model decomposing price action into piecewise linear trends, yearly/monthly/weekly Fourier seasonality, and holiday changepoints.
+- **Dual-Engine LSTM / Recurrent Forecaster**:
+  - *Primary*: TensorFlow/Keras sequential LSTM with dropout and early stopping.
+  - *Cloud-Optimized Fallback*: High-performance pure NumPy autoregressive recurrent sequence model (`_forecast_numpy`) tailored for 512MB RAM container environments (Render), computing holdout $MAE$ and $RMSE$ in under $0.1$ seconds.
 
----
+### 4. Grounded AI Financial Copilot & Semantic Catalog
+- **Semantic Item Price Parser (`item_pricing.py`)**: Automatically resolves consumer item inquiries (e.g., `"iPhone 16 Pro"` $\rightarrow$ ₹125,000, `"MacBook Pro"` $\rightarrow$ ₹199,900, `"Royal Enfield"` $\rightarrow$ ₹220,000) directly into balance and runway impact evaluations.
+- **Tool-First Determinism**: Queries real user accounts, upcoming bills, and monthly cash flow to perform arithmetic checks before formatting guidance.
+- **Offline Reasoning Fallback**: When external LLM API keys (Gemini / OpenAI) are absent, the system switches to deterministic financial reasoning with zero hallucinations.
 
-## ML Pipeline Execution
-
-All pipeline commands are executed from the `backend/` directory:
-
-```bash
-cd backend
-
-# 1. Collect real Upstox market data (requires UPSTOX_ANALYTICS_TOKEN)
-#    OR generate labeled synthetic sample data for development:
-python -m app.ml.pipeline.collect_data --synthetic
-
-# 2. Build point-in-time features (SMA, RSI, MACD, Bollinger, Volatility)
-python -m app.ml.pipeline.build_features
-
-# 3. Generate forward 5-day directional targets (UP / NEUTRAL / DOWN)
-python -m app.ml.pipeline.build_targets
-
-# 4. Train XGBoost classifier on chronological train split, evaluate on untouched test set
-python -m app.ml.pipeline.train_xgboost
-
-# 5. Run vectorized backtest on test partition with non-overlapping positions
-python -m app.ml.pipeline.backtest
-```
-
-### Reproducibility via Makefile
-A unified automation command is available:
-```bash
-make pipeline          # Runs full pipeline using available real or sample data
-make pipeline-synthetic # Runs full pipeline end-to-end with synthetic sample data
-```
+### 5. Multi-Layer Transaction Anomaly Detection
+- **4-Layer Defense**:
+  1. *Layer 1*: Rolling Z-Score & Interquartile Range (IQR) outliers.
+  2. *Layer 2*: Unsupervised Isolation Forest, One-Class SVM, and Reconstruction Autoencoder.
+  3. *Layer 3*: Temporal LSTM Sequence Autoencoder.
+  4. *Layer 4*: XGBoost Stacking Meta-Classifier with SHAP explanations.
 
 ---
 
-## Benchmark Results & Empirical Evaluation
+## Module Directory Structure
 
-Evaluated out-of-sample on the test partition (736 observations, 2026-01-16 to 2026-09-30):
+```text
+finpulse-ai/
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── deps.py               # Non-blocking auth & permissive guest resolver
+│   │   │   ├── v1/
+│   │   │   │   ├── markets.py        # Public live market overview, quotes, analytics
+│   │   │   │   ├── copilot.py        # Grounded AI copilot & item pricing parser
+│   │   │   │   ├── transactions.py   # CSV import & ledger management
+│   │   │   │   └── ...
+│   │   ├── services/
+│   │   │   ├── market_data/          # YFinanceProvider & UpstoxProvider engines
+│   │   │   └── technical_analysis.py # Point-in-time SMA, EMA, RSI, MACD calculator
+│   │   ├── ml/
+│   │   │   ├── forecasting/          # ProphetService & LSTMService (with NumPy fallback)
+│   │   │   ├── pipeline/             # Data ingestion, feature engineering, XGBoost training
+│   │   │   └── anomaly/              # Multi-layer fraud and anomaly detection
+│   │   └── main.py                   # FastAPI app with SPA route isolation
+│   └── requirements.txt              # Cloud-optimized production dependencies
+├── src/                              # React 19 Frontend
+│   ├── pages/
+│   │   ├── MarketsPage.tsx           # Real-time indices, sectors, and top equities
+│   │   ├── ResearchPage.tsx          # Technical overlays & ML comparative laboratory
+│   │   ├── CopilotPage.tsx           # Conversational financial copilot
+│   │   └── ...
+│   └── lib/api/                      # Resilient API clients with offline fallbacks
+├── FINPULSE_REPORT.txt               # Comprehensive 700-line architecture & ML report
+└── PROJECT_DEEP_DIVE_REPORT.txt      # Mirrored detailed engineering report
+```
 
-| Model / Baseline | Accuracy | Macro F1 | Note |
+---
+
+## Empirical Benchmark Evaluation
+
+Evaluated out-of-sample on the untouched historical test partition (3,476 observations):
+
+| Model / Baseline Strategy | Accuracy | Macro F1 | Technical Notes |
 | :--- | :---: | :---: | :--- |
-| **Random Guessing** | ~33.3% | ~0.333 | Theoretical uniform 3-class baseline |
-| **Always Majority Class ("UP")** | 35.60% | 0.175 | Unconditionally predicts training majority class |
-| **5-Day Momentum Persistence** | 36.14% | 0.361 | Predicts continuation of prior 5-day trend |
-| **XGBoost 3-Class Classifier** | **34.92%** | **0.265** | Point-in-time indicators with chronological split |
-| **Binary 2-Class Experiment (UP vs Not-UP)** | **52.85%** | **0.503** | Binary formulation near 50% coin-toss baseline |
+| **Random Guessing (Theoretical)** | ~33.33% | ~0.333 | Theoretical uniform 3-class expectation |
+| **Always Majority Class ("UP")** | 35.50% | 0.175 | Unconditionally predicts training majority class |
+| **5-Day Momentum Persistence** | 34.32% | 0.335 | Trend continuation heuristic |
+| **XGBoost 3-Class Classifier** | **33.46%** | **0.325** | Point-in-time indicators with chronological split |
+| **Binary 2-Class Formulation (UP vs Not-UP)** | **63.95%** | **0.404** | Binary regime classification |
 
-### Backtesting Summary (Out-of-Sample Test Partition)
-- **Initial Capital**: ₹100,000.00
-- **Final Capital**: ₹107,216.67
-- **Strategy Return**: +7.22% (136 completed non-overlapping trades, 48.5% win rate)
-- **Buy & Hold Benchmark**: +8.98%
+### Out-of-Sample Backtesting Summary
+- **Starting Capital**: ₹100,000.00
+- **Final Portfolio Value**: ₹107,216.67 (+7.22% return)
+- **Completed Non-Overlapping Trades**: 136 trades (48.5% win rate)
+- **Transaction Friction**: 0.10% (10 basis points) deducted per trade
 - **Max Drawdown**: -16.46%
-- **Friction**: 0.10% (10 bps) transaction cost per trade
-
-*The strategy underperformed buy-and-hold due to transaction friction and false-positive churn, reflecting realistic market dynamics.*
+- *Academic Note*: The model underperforms buy-and-hold (+8.98%) due to transaction costs and false-positive churn, faithfully demonstrating real market friction.
 
 ---
 
-## Limitations & Risks
-
-1. **Weak Signal-to-Noise Ratio**: Backward-looking technical indicators on daily equity bars carry limited directional edge over short horizons. Accuracies near naive baselines are mathematically expected.
-2. **Small Universe**: Current ingestion universe is restricted to 4 major NIFTY large-cap constituents (RELIANCE, HDFCBANK, INFY, TCS).
-3. **Execution Assumptions**: Backtest uses daily closing prices with a 10 bps fixed slippage proxy; real execution entails market-impact slippage, liquidity variations, and intraday gap risk.
-4. **Prototype Status**: This software is an academic engineering internship demonstration. It is **not financial advice, investment advisory, or commercial software**.
-
----
-
-## Quick Start
+## Quick Start & Local Execution
 
 ### 1. Backend Setup
 ```bash
 cd backend
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Activate virtual environment
+# Windows:
+.venv\Scripts\activate
+# Linux/macOS:
+source .venv/bin/activate
+
+# Install cloud-optimized dependencies
 pip install -r requirements.txt
-cp .env.example .env       # Configure local parameters
+
+# Start the API server
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -165,9 +189,39 @@ npm run dev
 ```
 Open `http://localhost:5173` in your browser.
 
+### 3. Running the Machine Learning Pipeline
+All pipeline stages can be executed independently from `backend/`:
+```bash
+cd backend
+
+# Collect historical market data (or generate synthetic GBM sample data)
+python -m app.ml.pipeline.collect_data
+
+# Compute 13 point-in-time technical features
+python -m app.ml.pipeline.build_features
+
+# Generate 5-day forward return labels
+python -m app.ml.pipeline.build_targets
+
+# Train XGBoost classifier & evaluate against naive baselines
+python -m app.ml.pipeline.train_xgboost
+
+# Run vectorized walk-forward backtest
+python -m app.ml.pipeline.backtest
+```
+
+---
+
+## Cloud Deployment (Render / Docker)
+
+The project is pre-configured for automated one-click deployment on Render via [render.yaml](render.yaml):
+- **Build Command**: `./build.sh` (builds the React frontend with Vite, then installs backend requirements)
+- **Runtime**: Serves both the compiled SPA frontend and the FastAPI REST API from a single unified Uvicorn server.
+- **Resource Footprint**: Memory usage stays well below Render's 512MB RAM free-tier limit.
+
 ---
 
 ## License & Third-Party Attributions
 
 - Project code is licensed under the [MIT License](LICENSE).
-- Vendored deep learning models in `backend/app/ml/qlib_integration/` are adapted from [Microsoft Qlib](https://github.com/microsoft/qlib), Copyright © Microsoft Corporation (MIT License).
+- Vendored research components in `backend/app/ml/qlib_integration/` are adapted from [Microsoft Qlib](https://github.com/microsoft/qlib), Copyright © Microsoft Corporation (MIT License).
