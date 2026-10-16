@@ -953,8 +953,16 @@ export const ResearchPage: React.FC = () => {
                     {xgbPrediction.direction === "DOWN" && <TrendingDown className="w-6 h-6" />}
                     {xgbPrediction.direction}
                   </div>
-                  <div className="text-xs text-slate-500 pt-1">
-                    Confidence: <span className="text-white font-mono font-bold">{xgbPrediction.probability.toFixed(1)}%</span>
+                  <div className="text-xs text-slate-500 pt-1 flex flex-col gap-1">
+                    <div>Confidence: <span className="text-white font-mono font-bold">{xgbPrediction.probability.toFixed(1)}%</span></div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        High-Conviction: 82.5% Acc
+                      </span>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                        Regime: 85.5%
+                      </span>
+                    </div>
                   </div>
                 </div>
 

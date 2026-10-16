@@ -88,6 +88,26 @@ def compute_instrument_features(group: pd.DataFrame) -> pd.DataFrame:
     group['volume_ma_20'] = group['volume'].rolling(20, min_periods=20).mean()
     group['relative_volume'] = group['volume'] / group['volume_ma_20'].replace(0, np.nan)
 
+    # 6. Stationary Normalized Spread Features (Scale-Invariant for Machine Learning)
+    group['spread_sma20'] = (group['close'] - group['sma_20']) / group['sma_20'].replace(0, np.nan)
+    group['spread_sma50'] = (group['close'] - group['sma_50']) / group['sma_50'].replace(0, np.nan)
+    group['spread_sma200'] = (group['close'] - group['sma_200']) / group['sma_200'].replace(0, np.nan)
+
+    # Normalized MACD & Signal (normalized by price level)
+    group['macd_norm'] = group['macd'] / group['close'].replace(0, np.nan)
+    group['macd_signal_norm'] = group['macd_signal'] / group['close'].replace(0, np.nan)
+
+    # Normalized Bollinger %B and Bandwidth
+    band_range = (group['bollinger_upper'] - group['bollinger_lower']).replace(0, np.nan)
+    group['bollinger_pct_b'] = (group['close'] - group['bollinger_lower']) / band_range
+    group['bollinger_bandwidth'] = band_range / group['sma_20'].replace(0, np.nan)
+
+    # Normalized Bar Range Spreads
+    if 'high' in group.columns and 'low' in group.columns:
+        group['high_low_spread'] = (group['high'] - group['low']) / group['close'].replace(0, np.nan)
+    if 'open' in group.columns:
+        group['close_open_spread'] = (group['close'] - group['open']) / group['open'].replace(0, np.nan)
+
     return group
 
 

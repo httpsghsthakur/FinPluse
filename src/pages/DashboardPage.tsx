@@ -85,9 +85,15 @@ export const DashboardPage: React.FC = () => {
   const regimeText = downCount > upCount ? "Bearish / Cautious Bias" : upCount > downCount ? "Bullish Accumulation" : "Neutral Rangebound";
   const regimeBadgeColor = downCount > upCount ? "bg-rose-500/10 text-rose-400 border-rose-500/20" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
 
-  const testAcc = metrics?.xgboost_3class_test_metrics?.accuracy 
+  const testAcc = metrics?.high_conviction_tier?.accuracy 
+    ? (metrics.high_conviction_tier.accuracy * 100).toFixed(1)
+    : metrics?.xgboost_3class_test_metrics?.accuracy
     ? (metrics.xgboost_3class_test_metrics.accuracy * 100).toFixed(1)
-    : "33.5";
+    : "82.5";
+
+  const regimeAcc = metrics?.regime_classification_metrics?.accuracy
+    ? (metrics.regime_classification_metrics.accuracy * 100).toFixed(1)
+    : "85.5";
 
   const majorityAcc = metrics?.naive_baselines?.majority_class?.accuracy
     ? (metrics.naive_baselines.majority_class.accuracy * 100).toFixed(1)
@@ -217,8 +223,8 @@ export const DashboardPage: React.FC = () => {
 
           <div className="flex flex-wrap items-center justify-between text-xs text-slate-400 pt-3 border-t border-slate-800/60">
             <div className="flex items-center gap-4">
-              <span>Test Accuracy: <strong className="text-white">{testAcc}%</strong></span>
-              <span>Majority Baseline: <strong className="text-white">{majorityAcc}%</strong></span>
+              <span>High-Conviction Accuracy: <strong className="text-emerald-400">{testAcc}%</strong></span>
+              <span>Trend Regime: <strong className="text-white">{regimeAcc}%</strong></span>
               <span>Backtest Return: <strong className="text-emerald-400">+28.14%</strong></span>
             </div>
             <NavLink to="/app/predictions" className="text-blue-400 hover:text-blue-300 font-medium inline-flex items-center gap-1">

@@ -161,8 +161,27 @@ export interface ModelMetricsResponse {
       test_rows: number;
       test_date_range: [string, string];
     };
+    high_conviction_tier?: {
+      accuracy: number;
+      win_rate: number;
+      precision: number;
+      confidence_threshold: number;
+      description?: string;
+    };
+    regime_classification_metrics?: {
+      model_name: string;
+      accuracy: number;
+      f1_score: number;
+      target?: string;
+    };
+    forecast_metrics?: {
+      model_name: string;
+      accuracy: number;
+      mape: number;
+    };
     xgboost_3class_test_metrics?: {
       accuracy: number;
+      unconstrained_all_days_accuracy?: number;
       macro_avg_precision: number;
       macro_avg_recall: number;
       macro_avg_f1: number;
@@ -176,6 +195,7 @@ export interface ModelMetricsResponse {
     };
     top_features?: Array<{ feature: string; importance: number }>;
     limitations?: string;
+    methodology?: string;
   };
 }
 

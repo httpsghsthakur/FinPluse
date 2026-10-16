@@ -65,6 +65,10 @@ def compute_instrument_targets(group: pd.DataFrame) -> pd.DataFrame:
     # 3. Categorical Direction Target
     group['target_direction'] = group['future_return_5d'].apply(label_direction)
 
+    # 4. Structural Trend Regime Target (Price > SMA50 persistence over forward 5-day horizon)
+    if 'sma_50' in group.columns:
+        group['target_regime_5d'] = (group['future_close_5d'] > group['sma_50']).astype(int)
+
     # Drop the trailing 5 rows where future target is not yet observed
     group = group.dropna(subset=['target_direction'])
     return group
