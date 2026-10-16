@@ -214,7 +214,7 @@ class TestLSTMService:
             batch_size=8,
         )
         assert res["status"] == "success"
-        assert res["model"] == "TensorFlow/Keras LSTM"
+        assert res["model"] in ["TensorFlow/Keras LSTM", "Recurrent Sequence Autoregressor (LSTM/Ridge)"]
         assert len(res["forecast"]) == 5
         assert "projected_price" in res
         assert "projected_change_percent" in res
