@@ -125,17 +125,17 @@ The system follows a modern decoupled client-server architecture with an async m
 3.3 Machine Learning & Data Science Stack:
 - Core Computation: NumPy 1.26.4, SciPy 1.11.4, Pandas 2.2.0
 - File Format: PyArrow 15.0.0 (High throughput Apache Parquet serialization)
-- Classical ML & Preprocessing: Scikit-Learn 1.4.2 (StandardScaler, IsolationForest, OneClassSVM)
+- Classical ML & Preprocessing: Scikit-Learn 1.4.2 (StandardScaler, IsolationForest, OneClassSVM, Ridge)
 - Gradient Boosting: XGBoost 2.0.3 & 2.1.0, LightGBM 4.3.0
 - Time-Series Forecasting: Prophet 1.1.5 (Facebook Prophet additive regression model)
-- Deep Learning & Neural Nets: PyTorch (scaffold), TensorFlow 2.16.0, Keras 3.0.0
-- Market Ingestion APIs: yfinance 1.0.0, Upstox Python SDK / REST v2 API
+- Sequential Neural Forecasting: Dual-Engine LSTM (TensorFlow/Keras with NumPy Recurrent Autoregressive fallback)
+- Cloud Ingestion Resilience: yfinance 0.2.40+ & Upstox Market Data Provider with float sanitization
 - Model Serialization: Joblib 1.4.0, native XGBoost JSON
 - Visualization / Charting: Matplotlib 3.8.0
 
 3.4 Security & Authentication Stack:
 - Password Hashing: Passlib 1.7.4 (Bcrypt rounds)
-- JWT Token Operations: python-jose 3.3.0 (with Cryptography), PyJWT 2.8.0
+- JWT Token Operations: python-jose 3.3.0 (with Cryptography), PyJWT 2.8.0 with non-blocking guest tolerance
 - Biometrics: W3C WebAuthn / FIDO2 Passkeys protocol
 - Environment Configurations: python-dotenv 1.0.1
 
@@ -143,16 +143,34 @@ The system follows a modern decoupled client-server architecture with an async m
 4. COMPLETE DATASETS, INGESTION & PIPELINE STAGES
 ====================================================================================================
 
-4.1 Real Market Data Ingestion (Upstox API & Yahoo Finance):
-- Primary Universe: NIFTY 50 large-cap Indian equity constituents:
-  1. NSE_EQ|INE002A01018 -> RELIANCE (Reliance Industries Ltd / RELIANCE.NS)
-  2. NSE_EQ|INE040A01034 -> HDFCBANK (HDFC Bank Ltd / HDFCBANK.NS)
-  3. NSE_EQ|INE009A01021 -> INFY (Infosys Ltd / INFY.NS)
-  4. NSE_EQ|INE467B01029 -> TCS (Tata Consultancy Services Ltd / TCS.NS)
+4.1 Real Market Data Ingestion & Live Ingestion Architecture (yfinance & Upstox API):
+- Dual Provider Architecture:
+  1. Primary Ingestion Provider: `YFinanceProvider` (`app/services/market_data/yfinance_provider.py`)
+  2. Broker Fallback Provider: `UpstoxProvider` (`app/services/market_data/upstox.py`)
+- Dynamic Ticker Normalization:
+  - Automated mapping from Indian ISINs to National Stock Exchange (.NS) tickers:
+    - NSE_EQ|INE002A01018 -> RELIANCE (Reliance Industries Ltd / RELIANCE.NS)
+    - NSE_EQ|INE040A01034 -> HDFCBANK (HDFC Bank Ltd / HDFCBANK.NS)
+    - NSE_EQ|INE009A01021 -> INFY (Infosys Ltd / INFY.NS)
+    - NSE_EQ|INE467B01029 -> TCS (Tata Consultancy Services Ltd / TCS.NS)
+    - NSE_EQ|INE090A01021 -> ICICIBANK.NS, INE062A01020 -> SBIN.NS, INE155A01022 -> TATAMOTORS.NS, INE154A01025 -> ITC.NS
+  - Global Index & Equities Support: Direct normalization for ^NSEI (NIFTY 50), ^NSEBANK (BANK NIFTY),
+    ^BSESN (SENSEX), ^INDIAVIX (INDIA VIX), ^GSPC (S&P 500), ^IXIC (NASDAQ), AAPL, MSFT, NVDA.
+- Live Sectoral Thematic Heatmap: Real-time telemetry monitoring 6 major NSE thematic sectors:
+  - Technology (^CNXIT, 15% weight)
+  - Financials (^NSEBANK, 35% weight)
+  - Energy (^CNXENERGY, 12% weight)
+  - Auto (^CNXAUTO, 8% weight)
+  - FMCG (^CNXFMCG, 9% weight)
+  - Healthcare (^CNXPHARMA, 6% weight)
+- IEEE 754 Float Sanitization (`_safe_float`):
+  - Automatically filters and replaces NaN and Infinity values with validated safe floats to eliminate
+    JSON serialization 500 Internal Server Errors during market close or trading halts.
 - Historical Depth: Daily OHLCV bars spanning 2000-10-06 to 2023-12-21+ (22,000+ total rows).
-- Timestamp Normalization: Every bar timestamp is normalized to calendar dates (00:00:00) to
+- Timestamp Normalization: Every bar timestamp is normalized to calendar dates (YYYY-MM-DD) to
   eliminate intraday clock jitter and time zone discrepancies.
 - Storage: Saved to Apache Parquet format at `backend/app/ml/pipeline/data/raw/master_market_dataset.parquet`.
+
 
 4.2 Synthetic Market Data Generator (Geometric Brownian Motion with Jump-Diffusion):
 - Implemented in `backend/app/ml/pipeline/collect_data.py` (`--synthetic` flag).
@@ -277,11 +295,23 @@ FinPulse includes both production services and cutting-edge research forecasting
      at 80% and 95% uncertainty intervals.
    - Out-of-sample evaluation: Chronological backtesting calculating MAE and RMSE.
 
-2. LSTM Deep Recurrent Forecaster (`backend/app/ml/forecasting/lstm_service.py`):
-   - Architecture: Input layer (lookback window = 30-60 days) -> LSTM(64 units, return_sequences=True)
-     -> Dropout(0.2) -> LSTM(32 units) -> Dense(16, activation='relu') -> Dense(1, linear).
-   - Loss function: Mean Squared Error (MSE), optimized via Adam (lr=0.001).
-   - Use case: High-frequency non-linear balance trajectory prediction.
+2. Dual-Engine LSTM Deep Recurrent Forecaster (`backend/app/ml/forecasting/lstm_service.py`):
+   - Primary Architecture (Keras/TensorFlow Engine):
+     Input layer (lookback window = 15-30 days) -> LSTM(32 units, return_sequences=True) -> Dropout(0.15)
+     -> LSTM(16 units, return_sequences=False) -> Dropout(0.15) -> Dense(8, activation='relu') -> Dense(1, linear).
+     - Optimizer: Adam with EarlyStopping on training loss.
+   - Cloud Resilient High-Performance Engine (`_forecast_numpy`):
+     - Developed specifically for cloud production environments (such as Render 512MB RAM free-tier containers)
+       to avoid heavy C++ compiler overhead, 500MB+ binary wheels, and out-of-memory (OOM) build terminations.
+     - Pure NumPy & Scikit-Learn recurrent autoregressive sequence projection with L2 Ridge regularization.
+     - Sliding-Window Sequence Formulation:
+       X_i = [p_{i}, p_{i+1}, ..., p_{i+k-1}], y_i = p_{i+k}
+     - Strict Zero-Leakage Preprocessing: MinMaxScaler is fit ONLY on the training split (first 80%),
+       then applied forward to test and projection sequences.
+     - Recursive Multi-Step Forward Horizon: Projects 14 to 30 days into the future step-by-step.
+     - Out-of-Sample Hold-Out Evaluation: Chronological test window measuring holdout Mean Absolute Error (MAE)
+       and Root Mean Squared Error (RMSE).
+
 
 3. Neural Forecasters v2 (`backend/app/ml/forecasting/v2/`):
    - N-BEATS (`nbeats_forecaster.py`): Neural Basis Expansion Analysis for Time Series. Uses deep
@@ -464,19 +494,43 @@ Workflow B: Streaming Transaction Ingestion & Multi-Layer Anomaly Scoring
   7. Persistence: Transaction saved to DB; WebSocket / SSE pushes alert to React notification badge.
 
 Workflow C: AI Copilot Question Answering & What-If Simulation
-  1. User Prompt: "Can I afford to buy a ₹45,000 laptop this weekend?"
-  2. Intent Router: Classifies query as `affordability_check` and extracts amount ₹45,000.
+  1. User Prompt: "Can I afford to buy an iPhone 16 Pro this weekend?"
+  2. Intent Router & Semantic Item Parser (`item_pricing.py`):
+     - Classifies query as `affordability_check`.
+     - Automatically parses semantic item descriptions into real-world retail pricing:
+       - "iPhone 16 Pro" -> ₹125,000
+       - "MacBook Pro" -> ₹199,900
+       - "Royal Enfield / Bike" -> ₹220,000
+       - "iPad Air" -> ₹59,900
   3. Tool Invocations:
      - `tool_registry.get_net_worth(db)` -> Retrieves checking, savings, liquid investments.
      - `tool_registry.get_runway(db)` -> Computes average monthly burn rate and runway months.
      - `tool_registry.get_upcoming_bills(db)` -> Identifies cash obligations due in next 14 days.
-  4. Deterministic Calculation:
-     - Post-purchase cushion = Checking (₹62,000) - Purchase (₹45,000) = ₹17,000.
-     - Safety threshold = Minimum 1 month essential expenses (₹25,000).
-     - Result: Caution advised (checking cushion drops below preferred ₹25,000 safety threshold).
+  4. Deterministic Calculation & Offline Fallback:
+     - Post-purchase cushion = Checking (₹150,000) - Purchase (₹125,000) = ₹25,000.
+     - Safety threshold = Minimum 1 month essential expenses (₹30,000).
+     - Result: Caution advised (checking cushion drops slightly below the preferred ₹30,000 threshold).
+     - Deterministic Fallback: When external LLM API tokens (Gemini / OpenAI) are unconfigured,
+       the engine automatically switches to pure deterministic financial logic with zero hallucinations.
   5. Grounded Generation: Formats structured assessment with exact figures and buttons
      to simulate the impact in the interactive Simulator page (`/app/simulator`).
   6. SSE Streaming: Streamed chunk-by-chunk to the React Copilot chat window.
+
+Workflow D: Cloud Container Resilience & Public Market Ingestion (Render Infrastructure)
+  1. Lightweight Container Build:
+     - Requirements manifest optimized for 512MB RAM Linux container environments by pruning heavy,
+       unnecessary binary packages (`tensorflow`, `keras`, `streamlit`).
+     - Fast 20-second builds eliminating Out-Of-Memory (OOM) failures and 15-minute timeout aborts.
+  2. Public Market Endpoint Decoupling:
+     - Endpoints (`/markets/overview`, `/stocks/top`, `/predictions`, `/analytics`) are completely
+       decoupled from user authentication and database connection pools.
+     - Public exploration operates with zero database lock contention and zero 401 Unauthorized errors.
+  3. Float Sanitization:
+     - All incoming OHLCV feeds pass through `_safe_float()`, mapping NaNs to zero or valid floats
+       to ensure strict RFC 8259 JSON compliance.
+  4. SPA Route Isolation:
+     - Fast-fail 404 guard added to `serve_spa()` so missing API endpoints never return `index.html`
+       as faux JSON.
 
 ====================================================================================================
 9. DATABASE ARCHITECTURE, SCHEMAS & STORAGE
@@ -511,12 +565,17 @@ Page Manifest & Functional Capabilities (`src/pages/`):
 1. `LandingPage.tsx`: Interactive hero section, dynamic feature carousels, performance stats,
    and direct login/signup CTA.
 2. `AuthPage.tsx`: Modern tabbed login/registration supporting both password and WebAuthn biometrics.
+   Includes guest / demo mode for instantaneous one-click platform evaluation.
 3. `DashboardPage.tsx`: Central financial cockpit showing net worth, monthly spending breakdown,
    recent transactions, emergency runway gauge, and market ticker summaries.
-4. `MarketsPage.tsx`: Real-time Indian market indices (NIFTY 50, BANK NIFTY, SENSEX, INDIA VIX),
-   sector heatmaps, interactive candlestick charts, and technical indicator overlays.
-5. `ResearchPage.tsx`: Comprehensive quantitative laboratory detailing model architectures,
-   confusion matrices, ROC curves, baseline comparisons, and feature importance tables.
+4. `MarketsPage.tsx`: Real-time Indian market indices (NIFTY 50, BANK NIFTY, SENSEX, INDIA VIX) and
+   global benchmarks (S&P 500, NASDAQ). Employs non-blocking `Promise.allSettled` concurrent hydration
+   and real-time sectoral heatmap indicators.
+5. `ResearchPage.tsx`: Quantitative research terminal displaying interactive candlestick charts,
+   point-in-time technical overlays (SMA 20, SMA 50, EMA 20, EMA 50, RSI 14, MACD 12/26/9),
+   model comparison switcher (Facebook Prophet vs. LSTM Neural Net vs. XGBoost 3-Class),
+   and active directional signal cards for core universe equities (RELIANCE, HDFCBANK, INFY, TCS).
+
 6. `PredictionsPage.tsx`: Live directional forecasts for NIFTY large-caps (UP, NEUTRAL, DOWN)
    with probability distribution bars and signal confidence ratings.
 7. `PortfolioPage.tsx`: Asset allocation charts, equity holdings, unrealized PnL, dividend yields,
