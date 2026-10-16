@@ -54,5 +54,9 @@ tzlocal>=5.4.0
 
 # Forecasting & Copilot LLM Client
 prophet>=1.1.5
+yfinance>=1.0.0
+tensorflow>=2.16.0
+keras>=3.0.0
+streamlit>=1.35.0
 openai>=1.30.0
 google-genai>=2.29.0

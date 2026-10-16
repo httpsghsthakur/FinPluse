@@ -1,0 +1,665 @@
+====================================================================================================
+                        FINPULSE AI — ARCHITECTURE & ML COMPREHENSIVE REPORT
+====================================================================================================
+Date of Generation: 2026-10-16
+Project: FinPulse AI — Market Intelligence & Financial Copilot
+Repository: httpsghsthakur/FinPaluse
+Classification: Academic & Quantitative Engineering Prototype
+
+====================================================================================================
+TABLE OF CONTENTS
+====================================================================================================
+1. EXECUTIVE SUMMARY & SYSTEM OVERVIEW
+2. HIGH-LEVEL ARCHITECTURE & TOPOLOGY
+3. FULL TECHNOLOGY STACK & LIBRARIES
+4. COMPLETE DATASETS, INGESTION & PIPELINE STAGES
+5. MACHINE LEARNING MODELS & QUANTITATIVE ENGINES
+   5.1 Core Market Directional Classifier (XGBoost 3-Class)
+   5.2 Time-Series & Cash Flow Forecasting Engines (Prophet, LSTM, N-BEATS, N-HiTS, TFT, Ensemble)
+   5.3 Multi-Layer Transaction Anomaly Detection Architecture
+   5.4 Microsoft Qlib Deep Quantitative Research Scaffold
+   5.5 Federated Learning Engine (Privacy-Preserving Edge Compute)
+   5.6 ReAct Agentic Orchestrator & Multi-Agent Framework
+6. REASONING TRACES, EXPLAINABLE AI (XAI) & AUDITABILITY
+7. VECTORIZED WALK-FORWARD BACKTESTING ENGINE
+8. SYSTEM WORKFLOWS & DATA FLOW LIFECYCLES
+9. DATABASE ARCHITECTURE, SCHEMAS & STORAGE
+10. FRONTEND ARCHITECTURE, USER EXPERIENCE & PAGES
+11. HONEST BENCHMARKS, EMPIRICAL RESULTS & LIMITATIONS
+12. DIRECTORY STRUCTURE & FILE MANIFEST
+
+====================================================================================================
+1. EXECUTIVE SUMMARY & SYSTEM OVERVIEW
+====================================================================================================
+FinPulse AI is an enterprise-grade hybrid quantitative
+finance and personal financial intelligence system. It combines:
+1. Point-in-time market data ingestion and technical feature engineering.
+2. Gradient-boosted tree modeling (XGBoost) for forward 5-day equity directional movement.
+3. Realistic, vectorized, non-overlapping backtesting incorporating transaction friction.
+4. Deep time-series probabilistic forecasting (Prophet, N-BEATS, N-HiTS, TFT) and Monte Carlo
+   what-if scenario simulations.
+5. A 4-layer anomaly and fraud detection engine combining statistical methods, unsupervised
+   machine learning, sequence autoencoders, and an XGBoost meta-classifier.
+6. A ReAct (Reasoning + Acting) autonomous agent framework for financial actions (bill negotiation,
+   subscription watchdog, auto-balancing).
+7. Privacy-preserving Federated Learning (FedAvg) and Explainable AI (SHAP attributions & reasoning traces).
+8. A modern, dark-mode, responsive web interface built with React 19, TypeScript, and Vite.
+
+Academic Integrity & Engineering Philosophy:
+- Zero Look-Ahead Bias: All technical indicators are calculated strictly on data <= t.
+- Strict Chronological Splitting: 70% Train, 15% Validation, 15% Out-of-Sample Test partition.
+- Naive Baseline Comparisons: Models are benchmarked against random chance, always-majority class,
+  and 5-day momentum persistence.
+- Tool-First Determinism: The AI Copilot uses deterministic code execution to retrieve balances,
+  runway, and metrics rather than allowing the LLM to hallucinate financial arithmetic.
+
+====================================================================================================
+2. HIGH-LEVEL ARCHITECTURE & TOPOLOGY
+====================================================================================================
+The system follows a modern decoupled client-server architecture with an async micro-kernel pattern:
+
+  +---------------------------------------------------------------------------------+
+  |                             CLIENT LAYER (Browser)                              |
+  |  React 19 + TypeScript + Vite | Tailwind CSS v4 | Zustand | TanStack Query       |
+  |  Recharts (Financial Charts) | Canvas Confetti | Lucide Icons | Motion FX       |
+  +---------------------------------------------------------------------------------+
+                                         |
+                                         | HTTP REST (JSON) + SSE Streams (Port 8000)
+                                         v
+  +---------------------------------------------------------------------------------+
+  |                           FASTAPI APPLICATION SERVER                            |
+  |  - Lifespan DB initialization & automated table migration (SQLAlchemy Async)     |
+  |  - Authentication & RBAC (Supabase JWT / Biometric WebAuthn FIDO2)              |
+  |  - API v1: Markets, Transactions, Budgets, Forecast, Copilot, Simulator, Goals  |
+  |  - API v2: Neural Forecast, Multi-Layer Anomalies, XAI Explain, Agents, Banking |
+  +---------------------------------------------------------------------------------+
+       |                         |                          |                  |
+       v                         v                          v                  v
++--------------+        +------------------+      +------------------+  +---------------+
+| ML PIPELINE  |        |  AGENTIC ENGINE  |      |   AI COPILOT     |  | STREAMING BUS |
+| - Upstox/YF  |        | - ReAct Loop     |      | - Intent Router  |  | - EventBus    |
+| - Feat Eng   |        | - Auto-Balance   |      | - Deterministic  |  | - Raw /       |
+| - XGBoost    |        | - Bill Negotiator|      |   Tool Registry  |  |   Enriched /  |
+| - Backtest   |        | - Sub Watchdog   |      | - Grounded Gen   |  |   Scored      |
++--------------+        +------------------+      +------------------+  +---------------+
+       |                         |                          |                  |
+       +-------------------------+--------------------------+------------------+
+                                         |
+                                         v
+  +---------------------------------------------------------------------------------+
+  |                             DATA & PERSISTENCE LAYER                            |
+  |  - Relational: PostgreSQL (production) / SQLite via aiosqlite (local dev)       |
+  |  - Parquet Data Lakes: data/raw/, data/processed/, data/sample/ (PyArrow)       |
+  |  - Model Artifacts: native XGBoost JSON, Joblib binary weights                  |
+  +---------------------------------------------------------------------------------+
+
+====================================================================================================
+3. FULL TECHNOLOGY STACK & LIBRARIES
+====================================================================================================
+
+3.1 Frontend Web Stack:
+- Core Framework: React 19.0.1 (Concurrent Rendering, modern hooks)
+- Language: TypeScript 5.8.2 (Strict type checking)
+- Build System: Vite 6.2.3 (ESM hot module reloading)
+- Styling & Theming: Tailwind CSS 4.1.14 (@tailwindcss/vite, clsx, tailwind-merge)
+- State Management: Zustand 5.0.15 (Global stores: userStore, auth, markets, transactions)
+- Asynchronous Data Fetching: TanStack React Query 5.101.4 (Caching, deduplication)
+- Data Visualization: Recharts 3.10.1 (Candlestick, multi-line, area confidence bands)
+- Animations: Motion 12.23.24 (Fluid layout transitions, modals, micro-animations)
+- Icons: Lucide React 0.546.0
+- Dates: date-fns 4.4.0
+- Special Effects: canvas-confetti 1.9.4 (Goal achievement celebrations)
+- External Auth Client: @supabase/supabase-js 2.112.3
+
+3.2 Backend Service Stack:
+- API Framework: FastAPI 0.115+ (High-performance async ASGI)
+- Web Server: Uvicorn 0.30.0 (Standard with uvloop and httptools)
+- Streaming: sse-starlette 2.1.0 (Server-Sent Events for token streaming)
+- Data Validation & Schemas: Pydantic 2.8.0, pydantic-settings 2.4.0
+- Database ORM: SQLAlchemy 2.0.30 (AsyncIO support)
+- Drivers: asyncpg 0.29.0 (PostgreSQL), aiosqlite 0.20.0 (SQLite), psycopg2-binary 2.9.9
+- Database Migrations: Alembic 1.13.0
+- Vector Support: pgvector 0.2.5 (Postgres vector embeddings)
+- Background Task Schedulers: APScheduler 3.11.0, tzlocal 5.4.0
+
+3.3 Machine Learning & Data Science Stack:
+- Core Computation: NumPy 1.26.4, SciPy 1.11.4, Pandas 2.2.0
+- File Format: PyArrow 15.0.0 (High throughput Apache Parquet serialization)
+- Classical ML & Preprocessing: Scikit-Learn 1.4.2 (StandardScaler, IsolationForest, OneClassSVM)
+- Gradient Boosting: XGBoost 2.0.3 & 2.1.0, LightGBM 4.3.0
+- Time-Series Forecasting: Prophet 1.1.5 (Facebook Prophet additive regression model)
+- Deep Learning & Neural Nets: PyTorch (scaffold), TensorFlow 2.16.0, Keras 3.0.0
+- Market Ingestion APIs: yfinance 1.0.0, Upstox Python SDK / REST v2 API
+- Model Serialization: Joblib 1.4.0, native XGBoost JSON
+- Visualization / Charting: Matplotlib 3.8.0
+
+3.4 Security & Authentication Stack:
+- Password Hashing: Passlib 1.7.4 (Bcrypt rounds)
+- JWT Token Operations: python-jose 3.3.0 (with Cryptography), PyJWT 2.8.0
+- Biometrics: W3C WebAuthn / FIDO2 Passkeys protocol
+- Environment Configurations: python-dotenv 1.0.1
+
+====================================================================================================
+4. COMPLETE DATASETS, INGESTION & PIPELINE STAGES
+====================================================================================================
+
+4.1 Real Market Data Ingestion (Upstox API & Yahoo Finance):
+- Primary Universe: NIFTY 50 large-cap Indian equity constituents:
+  1. NSE_EQ|INE002A01018 -> RELIANCE (Reliance Industries Ltd / RELIANCE.NS)
+  2. NSE_EQ|INE040A01034 -> HDFCBANK (HDFC Bank Ltd / HDFCBANK.NS)
+  3. NSE_EQ|INE009A01021 -> INFY (Infosys Ltd / INFY.NS)
+  4. NSE_EQ|INE467B01029 -> TCS (Tata Consultancy Services Ltd / TCS.NS)
+- Historical Depth: Daily OHLCV bars spanning 2000-10-06 to 2023-12-21+ (22,000+ total rows).
+- Timestamp Normalization: Every bar timestamp is normalized to calendar dates (00:00:00) to
+  eliminate intraday clock jitter and time zone discrepancies.
+- Storage: Saved to Apache Parquet format at `backend/app/ml/pipeline/data/raw/master_market_dataset.parquet`.
+
+4.2 Synthetic Market Data Generator (Geometric Brownian Motion with Jump-Diffusion):
+- Implemented in `backend/app/ml/pipeline/collect_data.py` (`--synthetic` flag).
+- Purpose: Fully reproducible offline pipeline execution without requiring active broker tokens.
+- Mathematics:
+  S_t = S_{t-1} * exp( (mu - 0.5 * sigma^2)*dt + sigma*sqrt(dt)*Z_t ) + J_t
+  where:
+    - Base starting prices: RELIANCE=2500, HDFCBANK=1600, INFY=1500, TCS=3500 INR.
+    - Volatility sigma: 0.22 - 0.26 annualized.
+    - Drift mu: 0.10 - 0.14 annualized.
+    - Jump process J_t: Poisson probability with random negative or positive price shock.
+    - Intraday High/Low/Open bounds: Simulated using realistic daily range distributions.
+    - Volume: Log-normal distribution with volatility correlation.
+- Output: Stored strictly at `backend/app/ml/pipeline/data/sample/synthetic_market_dataset.parquet`.
+
+4.3 Personal Finance Transactions Dataset (`transactions_inr.csv`):
+- Location: Root workspace `transactions_inr.csv`.
+- Format: Tabular CSV with Indian Rupee (INR) denomination.
+- Attributes:
+  - `id`: Unique transaction identifier.
+  - `date`: YYYY-MM-DD timestamp.
+  - `amount`: Float value (negative for debit/expenses, positive for credit/income).
+  - `description` / `merchant`: Merchant name (e.g., Swiggy, Zomato, Amazon India, Netflix, Uber, Infosys Salary).
+  - `category_id`: Normalized spending category (Food & Dining, Shopping, Utilities, Salary, Travel, Transfers).
+  - `account_id`: Linked account (Checking, HDFC Credit Card, Savings, Zerodha Trading).
+  - `is_recurring`: Boolean indicating subscriptions or utility debits.
+
+4.4 Seed / Demo Database Generator (`admin.py`):
+- Initializes demo accounts for instant zero-config testing:
+  - Checking account (INR 45,000 - 150,000 balance).
+  - High-Yield Savings account (INR 500,000 balance, 6.5% interest rate).
+  - Credit Card accounts with credit limits, statement balances, and APR.
+  - Mutual Fund / Equity investment portfolios.
+  - Budgets per category with monthly threshold limits.
+  - Financial goals (Emergency Fund, Down Payment, Vacation).
+
+====================================================================================================
+5. MACHINE LEARNING MODELS & QUANTITATIVE ENGINES
+====================================================================================================
+
+----------------------------------------------------------------------------------------------------
+5.1 CORE MARKET DIRECTIONAL CLASSIFIER (XGBoost 3-Class)
+----------------------------------------------------------------------------------------------------
+Location: `backend/app/ml/pipeline/`
+Pipeline scripts:
+  - `build_features.py` -> 13 point-in-time features
+  - `build_targets.py` -> 5-day forward return & direction labeling
+  - `train_xgboost.py` -> Model training & baseline evaluation
+  - `backtest.py` -> Out-of-sample vectorized execution simulation
+
+Mathematical Formulation:
+- Observation at Day t Close (15:30 IST):
+  Feature vector X_t is computed strictly from historical OHLCV data <= t.
+- Forward Return Target:
+  R_{t -> t+5} = (Close_{t+5} - Close_t) / Close_t
+- 3-Class Regime Labeling:
+  - "UP":      R_{t -> t+5} > +0.015  (+1.5%)
+  - "DOWN":    R_{t -> t+5} < -0.015  (-1.5%)
+  - "NEUTRAL": -0.015 <= R_{t -> t+5} <= +0.015
+
+13 Point-in-Time Features:
+  1. `return_1d`: Daily price percentage change: (Close_t - Close_{t-1}) / Close_{t-1}
+  2. `return_5d`: 5-day rolling price change: (Close_t - Close_{t-5}) / Close_{t-5}
+  3. `return_20d`: 20-day rolling price change: (Close_t - Close_{t-20}) / Close_{t-20}
+  4. `volatility_20d`: Rolling 20-day sample standard deviation of daily returns annualized (sqrt(252))
+  5. `sma_20`: 20-day Simple Moving Average of Close
+  6. `sma_50`: 50-day Simple Moving Average of Close
+  7. `sma_200`: 200-day Simple Moving Average of Close
+  8. `rsi_14`: 14-day Relative Strength Index (gain/loss Wilder smoothing)
+  9. `macd`: Moving Average Convergence Divergence line: EMA_12(Close) - EMA_26(Close)
+  10. `macd_signal`: 9-day EMA of MACD line
+  11. `bollinger_upper`: SMA_20 + 2 * std_20
+  12. `bollinger_lower`: SMA_20 - 2 * std_20
+  13. `relative_volume`: Volume_t / SMA_20(Volume)
+
+Chronological Splitting Constraint:
+  Total dates sorted strictly in ascending order:
+  - Train Set (70%): 15,270 rows (2000-10-06 to 2016-12-13)
+  - Validation Set (15%): 3,472 rows (2016-12-14 to 2020-06-24)
+  - Test Set (15%): 3,476 rows (2020-06-25 to 2023-12-21)
+  Strict constraint: max(Train_Date) < min(Val_Date) < min(Test_Date).
+  The test set is completely untouched during feature scaling and hyperparameter fitting.
+
+Hyperparameters (XGBoost):
+  - Model: `xgb.XGBClassifier`
+  - `n_estimators`: 100
+  - `max_depth`: 4
+  - `learning_rate`: 0.03
+  - `subsample`: 0.8
+  - `colsample_bytree`: 0.8
+  - `random_state`: 42
+  - `objective`: "multi:softprob" (outputs normalized probability distribution over 3 classes)
+  - `eval_metric`: "mlogloss"
+  - Sample Weighting: Unweighted to maintain true market empirical probability calibration.
+
+Feature Importance Hierarchy (Test Partition):
+  1. `volatility_20d` (11.66% importance)
+  2. `bollinger_lower` (9.77% importance)
+  3. `sma_50` (8.75% importance)
+  4. `sma_200` (8.55% importance)
+  5. `bollinger_upper` (8.20% importance)
+  6. `sma_20` (7.77% importance)
+  7. `return_5d` (7.63% importance)
+  8. `return_20d` (7.35% importance)
+  9. `macd` (6.75% importance)
+  10. `macd_signal` (6.56% importance)
+  11. `return_1d` (6.12% importance)
+  12. `rsi_14` (5.54% importance)
+  13. `relative_volume` (5.36% importance)
+
+----------------------------------------------------------------------------------------------------
+5.2 TIME-SERIES & CASH FLOW FORECASTING ENGINES
+----------------------------------------------------------------------------------------------------
+FinPulse includes both production services and cutting-edge research forecasting modules:
+
+1. Facebook Prophet Service (`backend/app/ml/forecasting/prophet_service.py`):
+   - Formulation: Additive model y(t) = g(t) + s(t) + h(t) + epsilon_t
+     - g(t): Piecewise linear trend with automatic changepoint selection.
+     - s(t): Fourier series modeling yearly, monthly, and weekly seasonality.
+     - h(t): Holiday and payday indicator matrices.
+   - Outputs: Point forecast (`yhat`), upper bound (`yhat_upper`), lower bound (`yhat_lower`)
+     at 80% and 95% uncertainty intervals.
+   - Out-of-sample evaluation: Chronological backtesting calculating MAE and RMSE.
+
+2. LSTM Deep Recurrent Forecaster (`backend/app/ml/forecasting/lstm_service.py`):
+   - Architecture: Input layer (lookback window = 30-60 days) -> LSTM(64 units, return_sequences=True)
+     -> Dropout(0.2) -> LSTM(32 units) -> Dense(16, activation='relu') -> Dense(1, linear).
+   - Loss function: Mean Squared Error (MSE), optimized via Adam (lr=0.001).
+   - Use case: High-frequency non-linear balance trajectory prediction.
+
+3. Neural Forecasters v2 (`backend/app/ml/forecasting/v2/`):
+   - N-BEATS (`nbeats_forecaster.py`): Neural Basis Expansion Analysis for Time Series. Uses deep
+     stacks of fully connected layers with forward and backward residual links (trend and seasonality blocks).
+     Requires zero feature engineering.
+   - N-HiTS (`nhits_forecaster.py`): Neural Hierarchical Interpolation for Time Series. Employs
+     multi-rate data sampling and hierarchical interpolation to capture long horizons efficiently.
+   - TFT (`tft_forecaster.py`): Temporal Fusion Transformer. Uses Variable Selection Networks (VSN),
+     Gated Residual Networks (GRN), and multi-head self-attention to process both static metadata
+     (account tier, risk profile) and dynamic time series with quantile loss (P10, P50, P90).
+
+4. Weighted Dynamic Ensemble (`backend/app/ml/forecasting/v2/ensemble.py`):
+   - Evaluates each model on a 30-day chronological holdout window.
+   - Calculates Mean Absolute Percentage Error (MAPE).
+   - Computes dynamic weights: w_i = (1 / MAPE_i) / sum_j(1 / MAPE_j).
+   - Applies exponential weight decay: w_t = 0.95 * w_{t-1} + 0.05 * w_new.
+
+5. Monte Carlo Scenario Engine (`backend/app/ml/forecasting/v2/scenario_engine.py`):
+   - Runs 10,000 simulated paths to compute ruin probability and runway duration.
+   - Built-in scenarios:
+     1. Job Loss (Zero primary income for N months).
+     2. Medical Emergency (Lump-sum negative shock).
+     3. Market Crash (30-50% equity valuation drop).
+     4. Lifestyle Inflation (Discretionary spend increase by X%).
+     5. Side Income Boost (Periodic secondary inflow).
+
+----------------------------------------------------------------------------------------------------
+5.3 MULTI-LAYER TRANSACTION ANOMALY DETECTION ARCHITECTURE
+----------------------------------------------------------------------------------------------------
+Location: `backend/app/ml/anomaly/`
+Designed to eliminate false-positive fatigue while detecting nuanced fraudulent or erroneous transactions:
+
+- Layer 1: Statistical Detectors (`statistical_detectors.py`):
+  - Rolling Z-Score: Identifies deviations > 3 standard deviations from user's 30-day mean.
+  - Interquartile Range (IQR): Flags values outside [Q1 - 1.5*IQR, Q3 + 1.5*IQR].
+  - Seasonal STL Decomposition: Decomposes series into Trend + Seasonal + Residual, flagging
+    residual outliers.
+
+- Layer 2: Machine Learning Detectors (`ml_detectors.py`):
+  - Enhanced Isolation Forest: Isolates anomalies in high-dimensional feature space (amount,
+    time_since_last_tx, merchant_category_encoded, day_of_week, 7d rolling mean).
+    Per-user contamination rate dynamically calibrated (0.01 - 0.05).
+  - One-Class SVM: Non-linear boundary using Radial Basis Function (RBF) kernel with nu=0.05.
+  - Deep Reconstruction Autoencoder: Neural network (Input 20 -> Dense 64 -> Dense 32 ->
+    Latent Bottleneck 16 -> Dense 32 -> Dense 64 -> Output 20). Reconstruction error
+    ||x - x_hat||^2 acts as continuous anomaly score.
+
+- Layer 3: Sequence / Temporal Detectors (`sequence_detectors.py`):
+  - LSTM Sequence Autoencoder: Encodes sequences of 10 consecutive transactions to catch temporal
+    irregularities (e.g., $10 coffee followed immediately by $1,200 electronics in a new city).
+  - Transformer Attention Detector: Uses multi-head self-attention over historical transaction
+    embeddings to detect long-range behavioral anomalies.
+
+- Layer 4: Meta-Classifier Ensemble (`meta_classifier.py`):
+  - XGBoost Stacking Classifier taking input scores from all lower layers.
+  - Generates unified anomaly probability [0.0, 1.0].
+  - Integrates SHAP (Shapley Additive Explanations) to explain exactly which detector triggered
+    the alert.
+  - Alert Tiers: INFO (0.3 - 0.5), WARNING (0.5 - 0.7), CRITICAL (> 0.7).
+
+----------------------------------------------------------------------------------------------------
+5.4 MICROSOFT QLIB DEEP QUANTITATIVE RESEARCH SCAFFOLD
+----------------------------------------------------------------------------------------------------
+Location: `backend/app/ml/qlib_integration/`
+FinPulse vendors and adapts components from Microsoft Qlib (MIT License) for exploratory deep
+learning research:
+- Models included:
+  - PyTorch ALSTM (Attention-based Long Short-Term Memory)
+  - PyTorch GATS (Graph Attention Networks for Cross-Asset Dependencies)
+  - PyTorch Transformer & LocalFormer
+  - PyTorch TabNet (Attentive Interpretable Tabular Learning)
+  - PyTorch TCN (Temporal Convolutional Networks)
+  - PyTorch TRA (Temporal Routing Adaptor)
+  - Double Ensemble (Random Subspace & Data Re-weighting for GBDT)
+
+----------------------------------------------------------------------------------------------------
+5.5 FEDERATED LEARNING ENGINE (PRIVACY-PRESERVING EDGE COMPUTE)
+----------------------------------------------------------------------------------------------------
+Location: `backend/app/ml/federated/` & `src/lib/ml/FederatedClient.ts`
+- Philosophy: User financial transactions contain sensitive personal data and should not be
+  unnecessarily aggregated in cleartext on a centralized server.
+- Federated Protocol:
+  1. Server distributes global model parameters (`GET /api/v2/federated/global_model`).
+  2. Client-side browser runtime (`FederatedClient.ts`) executes local gradient descent on
+     local transactions stored in IndexedDB/Zustand.
+  3. Client uploads only weight deltas / gradients (`POST /api/v2/federated/submit_update`).
+  4. Server performs Federated Averaging (FedAvg):
+     w_{t+1} = sum_k (n_k / n) * w_{t+1}^k
+  5. The global model improves without raw private data ever leaving the user's browser.
+
+----------------------------------------------------------------------------------------------------
+5.6 REACT AGENTIC ORCHESTRATOR & MULTI-AGENT FRAMEWORK
+----------------------------------------------------------------------------------------------------
+Location: `backend/app/agents/` & `backend/app/ai/`
+- Autonomous financial agents follow the ReAct (Reasoning + Acting) state machine:
+  IDLE -> TRIGGERED -> REASONING -> ACTION_PENDING -> CONFIRMED -> EXECUTED
+- Specific Agent Specializations:
+  1. `AutoBalanceAgent`: Monitors checking balances against upcoming bills. If checking drops
+     below safety threshold (e.g. INR 5,000) and high-yield savings has surplus, it proposes
+     a zero-fee sweep transfer.
+  2. `BillNegotiationAgent`: Analyzes recurring bills (telecom, internet, SaaS). Compares charges
+     with market benchmark rates, drafts automated negotiation scripts, and prompts user
+     approval before dispatch.
+  3. `SubscriptionWatchdog`: Detects recurring charges that have had zero utility/interaction
+     over 60+ days and generates one-click cancellation links.
+- Tool-First Determinism:
+  The agent does not guess numbers. It queries the `tool_registry` (`get_net_worth`, `get_runway`,
+  `get_spending_by_category`), passes values into a strict numerical validation safety layer
+  (`numeric_validator.py`), and grounds LLM outputs.
+
+====================================================================================================
+6. REASONING TRACES, EXPLAINABLE AI (XAI) & AUDITABILITY
+====================================================================================================
+FinPulse implements a strict "No Black Box" design:
+1. Reasoning Traces (`backend/app/xai/reasoning_trace.py`):
+   Every decision (affordability verdict, loan recommendation, anomaly flag) generates a JSON trace:
+   - `trigger_event`: What initiated the analysis.
+   - `data_inputs`: Real-time account balances, debts, and cash flows used.
+   - `logic_steps`: Explicit rule evaluation and intermediate mathematical results.
+   - `confidence_score`: Statistical probability.
+   - `recommended_action`: Final actionable insight.
+2. Mathematical Transparency:
+   Financial formulas are exposed to the UI in LaTeX formatting (e.g., runway calculation,
+   compound growth, Sharpe ratio, Sortino ratio).
+3. Audit Log (`backend/app/xai/audit_log.py`):
+   Immutable database log of all model predictions, user corrections, and acceptance rates.
+
+====================================================================================================
+7. VECTORIZED WALK-FORWARD BACKTESTING ENGINE
+====================================================================================================
+Location: `backend/app/ml/pipeline/backtest.py`
+Standard backtests often produce unrealistically high returns due to lookahead leakage, overlapping
+positions, and zero slippage assumptions. FinPulse enforces rigorous institutional constraints:
+
+1. Out-of-Sample Test Window:
+   Runs strictly on the test partition (the final 15% of historical dates: 2020-06-25 to 2023-12-21+).
+2. Vectorized Predictions:
+   Predictions are generated across all test observations simultaneously without lookahead row loops.
+3. Non-Overlapping Position Lock:
+   Because the model predicts 5-day forward directional returns, entering a trade locks that
+   instrument for 5 full trading days. The engine forbids entering new positions on the same
+   instrument on days t+1, t+2, t+3, t+4. This avoids fictitious compounding of the same price move.
+4. Transaction Friction & Slippage:
+   An explicit transaction friction parameter is deducted from every trade:
+   - 0.10% (10 basis points) roundtrip slippage + brokerage + STT proxy.
+   - Net Return = Gross Return - 0.0010.
+5. Capital Allocation & Position Sizing:
+   - Starting Capital: INR 100,000.00
+   - Maximum position size per trade: 25% of active portfolio capital.
+   - Benchmark: Equally weighted Buy-and-Hold portfolio across all 4 universe instruments.
+
+====================================================================================================
+8. SYSTEM WORKFLOWS & DATA FLOW LIFECYCLES
+====================================================================================================
+
+Workflow A: Market Data & ML Directional Forecasting Pipeline
+  1. Ingestion: `collect_data.py` calls Upstox v2 API or Yahoo Finance to fetch daily OHLCV bars.
+  2. Cleaning: Timestamps normalized to date; missing values checked; Parquet saved to `data/raw/`.
+  3. Features: `build_features.py` iterates per instrument group, computing 13 technical features <= t.
+  4. Target Formulation: `build_targets.py` calculates R_{t -> t+5}, assigns UP/DOWN/NEUTRAL labels,
+     and drops the trailing 5 rows.
+  5. Training: `train_xgboost.py` applies chronological 70/15/15 split, fits XGBoost classifier,
+     evaluates against naive baselines, and serializes models to `models/xgboost_direction.json`
+     and `models/xgboost_direction.joblib`.
+  6. Backtesting: `backtest.py` simulates out-of-sample trades with non-overlapping holding and 10 bps friction.
+  7. API Serving: `predict.py` and `backend/app/api/v1/markets.py` load artifacts and serve live
+     inference via `/api/v1/markets/predictions` and `/api/v1/markets/backtest`.
+
+Workflow B: Streaming Transaction Ingestion & Multi-Layer Anomaly Scoring
+  1. Transaction Arrival: Webhook or user manual entry at `POST /api/v1/transactions/`.
+  2. Stream Broker: Pushed to `EventBus` topic `transactions.raw`.
+  3. Feature Enrichment: Rolling 7-day stats, merchant categorization, and user historical profile attached.
+  4. Parallel Scoring:
+     - Statistical Detector (Z-score & IQR) runs in < 5ms.
+     - ML Isolation Forest & One-Class SVM score in < 25ms.
+     - Autoencoder reconstruction error computed.
+  5. Stacking Meta-Classifier: XGBoost combines scores; if probability > 0.50, an alert event is
+     emitted to `alerts.generated`.
+  6. Smart Grouping: Alerts are grouped by merchant and 1-hour time window to avoid spamming the user.
+  7. Persistence: Transaction saved to DB; WebSocket / SSE pushes alert to React notification badge.
+
+Workflow C: AI Copilot Question Answering & What-If Simulation
+  1. User Prompt: "Can I afford to buy a ₹45,000 laptop this weekend?"
+  2. Intent Router: Classifies query as `affordability_check` and extracts amount ₹45,000.
+  3. Tool Invocations:
+     - `tool_registry.get_net_worth(db)` -> Retrieves checking, savings, liquid investments.
+     - `tool_registry.get_runway(db)` -> Computes average monthly burn rate and runway months.
+     - `tool_registry.get_upcoming_bills(db)` -> Identifies cash obligations due in next 14 days.
+  4. Deterministic Calculation:
+     - Post-purchase cushion = Checking (₹62,000) - Purchase (₹45,000) = ₹17,000.
+     - Safety threshold = Minimum 1 month essential expenses (₹25,000).
+     - Result: Caution advised (checking cushion drops below preferred ₹25,000 safety threshold).
+  5. Grounded Generation: Formats structured assessment with exact figures and buttons
+     to simulate the impact in the interactive Simulator page (`/app/simulator`).
+  6. SSE Streaming: Streamed chunk-by-chunk to the React Copilot chat window.
+
+====================================================================================================
+9. DATABASE ARCHITECTURE, SCHEMAS & STORAGE
+====================================================================================================
+The system uses SQLAlchemy 2.0 with async engine configuration (`aiosqlite` for local development,
+`asyncpg` for PostgreSQL production).
+
+Core Database Models (`backend/app/db/models/`):
+- `User` (`user.py`): id, email, hashed_password, full_name, currency (default INR), monthly_income,
+  risk_tolerance, biometric_credential_id, created_at.
+- `Account` (`account.py`): id, user_id, name, type (checking, savings, credit, investment, loan),
+  balance, currency, institution, account_number_mask, is_active.
+- `Transaction` (`transaction.py`): id, account_id, user_id, date, amount, description, merchant,
+  category_id, is_recurring, pending, carbon_kg, anomaly_score.
+- `Category` (`category.py`): id, name, icon, color, monthly_budget, parent_category_id.
+- `Budget` (`budget.py`): id, user_id, category_id, period (monthly, annual), amount, spent.
+- `Goal` (`goal.py`): id, user_id, name, target_amount, current_amount, target_date, category, priority.
+- `MarketQuote` & `MarketBar` (`market.py`): instrument_key, symbol, open, high, low, close, volume,
+  timestamp, interval.
+- `ForecastSnapshot` (`forecast.py`): user_id, model_name, horizon_days, forecasted_points, confidence_bands.
+- `AnomalyLog` (`anomaly.py`): transaction_id, user_id, score, layer_fired, severity, is_reviewed, is_fraud.
+- `PredictionAudit` (`prediction_audit.py`): model_id, instrument, prediction_date, predicted_class,
+  probabilities, actual_return, was_correct.
+- `ReasoningTrace` & `AuditLog` (`xai/`): action_type, user_id, inputs_json, reasoning_steps, output_json.
+
+====================================================================================================
+10. FRONTEND ARCHITECTURE, USER EXPERIENCE & PAGES
+====================================================================================================
+The user interface is designed with a premium, sleek dark-mode glassmorphic aesthetic:
+
+Page Manifest & Functional Capabilities (`src/pages/`):
+1. `LandingPage.tsx`: Interactive hero section, dynamic feature carousels, performance stats,
+   and direct login/signup CTA.
+2. `AuthPage.tsx`: Modern tabbed login/registration supporting both password and WebAuthn biometrics.
+3. `DashboardPage.tsx`: Central financial cockpit showing net worth, monthly spending breakdown,
+   recent transactions, emergency runway gauge, and market ticker summaries.
+4. `MarketsPage.tsx`: Real-time Indian market indices (NIFTY 50, BANK NIFTY, SENSEX, INDIA VIX),
+   sector heatmaps, interactive candlestick charts, and technical indicator overlays.
+5. `ResearchPage.tsx`: Comprehensive quantitative laboratory detailing model architectures,
+   confusion matrices, ROC curves, baseline comparisons, and feature importance tables.
+6. `PredictionsPage.tsx`: Live directional forecasts for NIFTY large-caps (UP, NEUTRAL, DOWN)
+   with probability distribution bars and signal confidence ratings.
+7. `PortfolioPage.tsx`: Asset allocation charts, equity holdings, unrealized PnL, dividend yields,
+   and rebalancing recommendations.
+8. `ScreenerPage.tsx`: Quantitative stock screener filtering by RSI, Moving Average crossovers,
+   P/E ratio, market cap, and volume breakouts.
+9. `ForecastPage.tsx`: Interactive multi-horizon cash flow chart (30, 60, 90 days) displaying
+   upper/lower confidence intervals and predicted balance drop alerts.
+10. `SimulatorPage.tsx`: Interactive What-If financial sandbox. Sliders for salary changes,
+    rent changes, major purchases, or investment allocations dynamically recalculate 5-year runway.
+11. `CopilotPage.tsx`: Full-screen conversational AI assistant with citation badges, financial
+    cards, quick prompt actions, and reasoning trace drawers.
+12. `TransactionsPage.tsx`: Searchable, filterable ledger with instant merchant tagging, receipt
+    upload parser, and anomaly status indicators.
+13. `BudgetsPage.tsx`: Category spending bars, burn velocity, and proactive end-of-month overrun warnings.
+14. `GoalsPage.tsx`: Visual progress trackers, automated monthly contribution calculators,
+    and confetti animations upon milestone completion.
+15. `InsightsPage.tsx`: AI-generated financial insights, merchant subscription audits, and tax-saving tips.
+16. `SustainabilityPage.tsx`: Personal carbon footprint dashboard (kgCO2e per category) with
+    offset calculations.
+17. `SettingsPage.tsx`: Security preferences, API token configuration, currency selector,
+    and notification toggles.
+
+====================================================================================================
+11. HONEST BENCHMARKS, EMPIRICAL RESULTS & LIMITATIONS
+====================================================================================================
+
+11.1 Empirical Benchmark Evaluation (Untouched Test Partition):
+Evaluated on 3,476 out-of-sample observations (2020-06-25 to 2023-12-21):
+
++-----------------------------------------+-----------+-----------+-----------------------------------+
+| Model / Baseline Strategy               | Accuracy  | Macro F1  | Technical Notes                   |
++-----------------------------------------+-----------+-----------+-----------------------------------+
+| Uniform Random Guessing (Theoretical)   | ~33.33%   | ~0.333    | Uniform 3-class expectation       |
+| Always Majority Class ("UP")            |  35.50%   |  0.175    | Predicts training majority class  |
+| 5-Day Momentum Persistence Baseline     |  34.32%   |  0.335    | Trend continuation heuristic      |
+| XGBoost 3-Class Classifier (FinPulse)   |  33.46%   |  0.325    | Point-in-time technical features  |
+| Binary 2-Class Experiment (UP vs Not-UP)|  63.95%   |  0.404    | Skewed binary classification      |
++-----------------------------------------+-----------+-----------+-----------------------------------+
+
+Per-Class Performance Breakdown (3-Class XGBoost on Test Set):
+- DOWN Class:    Precision: 27.98% | Recall: 54.69% | F1-Score: 0.370 (Support: 896)
+- NEUTRAL Class: Precision: 40.05% | Recall: 34.25% | F1-Score: 0.369 (Support: 1,346)
+- UP Class:      Precision: 36.93% | Recall: 17.18% | F1-Score: 0.235 (Support: 1,234)
+
+Test Set Confusion Matrix:
+                 [Predicted DOWN]   [Predicted NEUTRAL]   [Predicted UP]
+  [True DOWN]          490                  280                126
+  [True NEUTRAL]       649                  461                236
+  [True UP]            612                  410                212
+
+11.2 Out-of-Sample Backtesting Summary (Realistic 10 bps Friction):
+- Initial Capital: ₹100,000.00
+- Final Capital: ₹107,216.67
+- Strategy Net Return: +7.22% (136 completed non-overlapping trades, 48.5% win rate)
+- Benchmark (Buy & Hold): +8.98%
+- Maximum Drawdown: -16.46%
+- Transaction Friction: 0.10% (10 bps) per trade slippage and brokerage deduction.
+
+11.3 Mathematical & Financial Limitations:
+1. Martingale / Near-Random-Walk Behavior:
+   Asset prices over short horizons (1 to 5 days) exhibit low signal-to-noise ratios. Technical
+   indicators alone (SMA, RSI, MACD, Bollinger) carry weak directional alpha. An accuracy near 35%
+   on a 3-class problem is mathematically normal and consistent with academic literature.
+2. Small Instrument Universe:
+   The current pipeline focuses on 4 large-cap NIFTY equities. Cross-sectional momentum and mean
+   reversion require a broader universe (NIFTY 500) to exploit statistical dispersion.
+3. Execution Gap:
+   Daily EOD backtesting cannot model intraday order-book depth, bid-ask spread expansion during
+   volatility spikes, or overnight gap openings.
+4. Non-Advisory Disclaimer:
+   This project is an academic engineering and quantitative prototype. It is strictly not financial
+   advice or commercial automated trading software.
+
+====================================================================================================
+12. DIRECTORY STRUCTURE & FILE MANIFEST
+====================================================================================================
+finpulse-ai/
+├── README.md                      # Executive overview, architecture & integrity statement
+├── DEPLOYMENT.md                  # Cloud & local deployment guide
+├── Dockerfile                     # Multi-stage production container build
+├── docker-compose.yml             # Postgres + API + Frontend container orchestration
+├── build.sh                       # Unified production build script
+├── package.json                   # React 19 / Vite / Tailwind dependencies
+├── tsconfig.json                  # TypeScript compiler settings
+├── vite.config.ts                 # Vite bundle configuration
+├── transactions_inr.csv           # Personal finance sample dataset (INR)
+├── docs/                          # Architecture & design documentation
+│   ├── PIPELINE.md                # Quantitative ML pipeline guide
+│   ├── FORECASTING.md             # Probabilistic forecasting specifications
+│   ├── ANOMALY_DETECTION.md       # Multi-layer fraud detection specification
+│   ├── AGENTS.md                  # ReAct autonomous agents documentation
+│   ├── FEDERATED.md               # Privacy-preserving federated learning specs
+│   ├── XAI.md                     # Explainable AI & reasoning trace standards
+│   ├── STREAMING.md               # EventBus & real-time streaming topology
+│   ├── SUSTAINABILITY.md          # Carbon footprint calculation methodologies
+│   └── SECURITY.md                # WebAuthn / FIDO2 biometric authentication specs
+├── src/                           # Frontend React 19 Application
+│   ├── App.tsx                    # Route definitions & protected shell wrappers
+│   ├── main.tsx                   # React DOM entry point
+│   ├── index.css                  # Design tokens, Tailwind directives & glassmorphism
+│   ├── components/                # Reusable UI component library
+│   │   ├── layout/                # AppShell, Navbar, Sidebar, AuthProvider
+│   │   ├── common/                # Buttons, Modal, MetricCard, Tabs, Dropdowns
+│   │   └── charts/                # Recharts candlestick, area & bar visualizers
+│   ├── pages/                     # Application views (18 dedicated pages)
+│   ├── lib/                       # Utility libraries, stores & ML clients
+│   │   ├── store/                 # Zustand state stores (useUserStore, useMarketStore)
+│   │   ├── api/                   # Axios / fetch clients for backend endpoints
+│   │   └── ml/                    # FederatedClient.ts (browser gradient training)
+│   └── types/                     # TypeScript data interfaces & schemas
+└── backend/                       # Backend FastAPI & ML Subsystem
+    ├── requirements.txt           # Python dependencies manifest
+    ├── app/
+    │   ├── main.py                # FastAPI app initialization, CORS, lifespan, SPA static hosting
+    │   ├── core/                  # Configuration, logging, settings
+    │   ├── db/                    # SQLAlchemy async engine, base, session, models
+    │   │   └── models/            # User, Account, Transaction, Market, Goal, Budget, Anomaly
+    │   ├── api/                   # REST API routes
+    │   │   ├── v1/                # Core endpoints (markets, transactions, copilot, forecast, etc.)
+    │   │   └── v2/                # Advanced endpoints (neural forecast, anomalies, XAI, agents)
+    │   ├── ml/                    # Machine Learning & Quantitative Subsystems
+    │   │   ├── pipeline/          # Core Market Direction Pipeline
+    │   │   │   ├── collect_data.py    # Upstox / YFinance / Synthetic GBM data ingestion
+    │   │   │   ├── build_features.py  # 13 point-in-time technical features
+    │   │   │   ├── build_targets.py   # 5-day forward return & direction labeling
+    │   │   │   ├── train_xgboost.py   # Chronological 70/15/15 split & model fitting
+    │   │   │   ├── backtest.py        # Vectorized backtester with 10 bps friction
+    │   │   │   ├── predict.py         # Serialized model inference loader
+    │   │   │   ├── data/              # Raw, processed, and sample Parquet datasets
+    │   │   │   └── models/            # Serialized XGBoost models, metrics.json, plots
+    │   │   ├── forecasting/       # Time series (Prophet, LSTM, and v2 N-BEATS/N-HiTS/TFT)
+    │   │   ├── anomaly/           # 4-layer anomaly detection & XGBoost meta-classifier
+    │   │   ├── classifiers/       # Intent classification & LightGBM baselines
+    │   │   ├── federated/         # Federated learning server (FedAvg aggregation)
+    │   │   └── qlib_integration/  # Microsoft Qlib deep quantitative models scaffold
+    │   ├── agents/                # Autonomous ReAct agents (auto-balance, bill negotiation)
+    │   ├── ai/                    # Copilot orchestrator, deterministic tools, numeric safety
+    │   ├── multimodal/            # OCR receipt parser, NLP query parser, voice stubs
+    │   ├── xai/                   # Reasoning trace generator & audit logs
+    │   ├── sustainability/        # Carbon footprint calculator
+    │   └── services/              # External service providers (Upstox, yfinance, technical analysis)
+
+====================================================================================================
+                                      END OF COMPREHENSIVE REPORT
+====================================================================================================

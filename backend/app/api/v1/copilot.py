@@ -7,9 +7,12 @@ import time
 import asyncio
 import json
 import logging
-import os
-from google import genai
-from google.genai import types
+try:
+    from google import genai
+    from google.genai import types
+except ImportError:
+    genai = None  # type: ignore
+    types = None  # type: ignore
 from datetime import datetime, date, timedelta
 from typing import Any
 

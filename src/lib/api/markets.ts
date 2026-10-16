@@ -72,6 +72,84 @@ export interface PredictionItem {
   timeframe: string;
 }
 
+export interface CandleData {
+  timestamp: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  sma_20?: number | null;
+  sma_50?: number | null;
+  ema_20?: number | null;
+  ema_50?: number | null;
+  rsi?: number | null;
+  rsi_14?: number | null;
+  macd?: number | null;
+  macd_signal?: number | null;
+  macd_histogram?: number | null;
+}
+
+export interface ForecastPoint {
+  date: string;
+  predicted: number;
+  lower?: number;
+  upper?: number;
+}
+
+export interface EvaluationMetrics {
+  mae: number;
+  rmse: number;
+  test_points?: number;
+  evaluation_period?: string;
+}
+
+export interface ProphetForecastResponse {
+  status: "success" | "error";
+  model: string;
+  horizon_days: number;
+  history_points: number;
+  last_actual_price: number;
+  projected_price: number;
+  projected_change_percent: number;
+  forecast: ForecastPoint[];
+  metrics?: EvaluationMetrics | null;
+  message?: string;
+}
+
+export interface LSTMForecastResponse {
+  status: "success" | "error";
+  model: string;
+  horizon_days: number;
+  history_points: number;
+  last_actual_price: number;
+  projected_price: number;
+  projected_change_percent: number;
+  forecast: ForecastPoint[];
+  metrics?: EvaluationMetrics | null;
+  parameters?: {
+    sequence_length: number;
+    epochs: number;
+    batch_size: number;
+  };
+  message?: string;
+}
+
+export interface StockAnalyticsResponse {
+  symbol: string;
+  timeframe: string;
+  quote: StockItem;
+  candles: CandleData[];
+  indicators_summary: {
+    has_sma: boolean;
+    has_ema: boolean;
+    has_rsi: boolean;
+    has_macd: boolean;
+  };
+  prophet_forecast?: ProphetForecastResponse | null;
+  lstm_forecast?: LSTMForecastResponse | null;
+}
+
 export interface ModelMetricsResponse {
   status: string;
   data: {
@@ -170,7 +248,7 @@ export const marketApi = {
     fromDate?: string,
     toDate?: string,
     includeTechnicals = true
-  ): Promise<{ data: Array<{ timestamp: string; open: number; high: number; low: number; close: number; volume: number; rsi?: number; sma_20?: number; sma_50?: number }> }> {
+  ): Promise<{ data: CandleData[] }> {
     const to = toDate || new Date().toISOString().split("T")[0];
     const from = fromDate || new Date(Date.now() - 90 * 86400000).toISOString().split("T")[0];
     try {
@@ -179,5 +257,26 @@ export const marketApi = {
       if (!response.ok) throw new Error("Failed to fetch stock candles");
       return response.json();
     } catch (e) { throw e; }
+  },
+
+  async getProphetForecast(symbolOrKey: string, horizonDays = 30): Promise<ProphetForecastResponse> {
+    const url = `${API_CONFIG.BASE_URL}/markets/stocks/${encodeURIComponent(symbolOrKey)}/forecast/prophet?horizon_days=${horizonDays}`;
+    const response = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error("Failed to fetch Prophet forecast");
+    return response.json();
+  },
+
+  async getLstmForecast(symbolOrKey: string, horizonDays = 14, seqLength = 15): Promise<LSTMForecastResponse> {
+    const url = `${API_CONFIG.BASE_URL}/markets/stocks/${encodeURIComponent(symbolOrKey)}/forecast/lstm?horizon_days=${horizonDays}&seq_length=${seqLength}`;
+    const response = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error("Failed to fetch LSTM forecast");
+    return response.json();
+  },
+
+  async getStockAnalytics(symbolOrKey: string, timeframe = "6M"): Promise<StockAnalyticsResponse> {
+    const url = `${API_CONFIG.BASE_URL}/markets/stocks/${encodeURIComponent(symbolOrKey)}/analytics?timeframe=${encodeURIComponent(timeframe)}`;
+    const response = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error("Failed to fetch stock analytics");
+    return response.json();
   },
 };

@@ -10,13 +10,18 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.api.deps import get_optional_current_user
 from app.db.models.user import User
 from app.services.market_data.upstox import UpstoxProvider
+from app.services.market_data.yfinance_provider import YFinanceProvider
 from app.services.technical_analysis import TechnicalAnalysisEngine
+from app.ml.forecasting.prophet_service import ProphetService
+from app.ml.forecasting.lstm_service import LSTMService
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
 router = APIRouter()
-provider = UpstoxProvider()
+upstox_provider = UpstoxProvider()
+yf_provider = YFinanceProvider()
+provider = yf_provider  # Default to YFinance with Upstox fallback
 
 _CACHE: Dict[str, Any] = {
     "overview": None,
@@ -457,50 +462,151 @@ async def get_stock_quote(
 async def get_stock_candles(
     instrument_key: str,
     interval: str = Query("day"),
-    from_date: str = Query(..., description="Format: YYYY-MM-DD"),
-    to_date: str = Query(..., description="Format: YYYY-MM-DD"),
-    include_technicals: bool = Query(False),
+    from_date: Optional[str] = Query(None, description="Format: YYYY-MM-DD"),
+    to_date: Optional[str] = Query(None, description="Format: YYYY-MM-DD"),
+    period: Optional[str] = Query(None, description="e.g. 1mo, 3mo, 6mo, 1y"),
+    include_technicals: bool = Query(True),
     current_user: Optional[User] = Depends(get_optional_current_user)
 ):
-    """Get historical candles and optionally compute technical indicators."""
-    norm_interval = "day" if interval in ("1d", "day", "D") else interval
-    candles = await provider.get_historical_candles(instrument_key, norm_interval, from_date, to_date)
+    """Get historical candles and calculate SMA, EMA, RSI, and MACD indicators."""
+    norm_interval = "1d" if interval in ("1d", "day", "D") else interval
 
-    if not candles:
-        # Fallback to yfinance historical candles
-        try:
-            import yfinance as yf
-            sym_clean = instrument_key.split("|")[-1] if "|" in instrument_key else instrument_key
-            ticker_map = {
-                "INE002A01018": "RELIANCE.NS",
-                "INE040A01034": "HDFCBANK.NS",
-                "INE009A01021": "INFY.NS",
-                "INE467B01029": "TCS.NS",
-                "RELIANCE": "RELIANCE.NS",
-                "HDFCBANK": "HDFCBANK.NS",
-                "INFY": "INFY.NS",
-                "TCS": "TCS.NS",
-            }
-            yf_ticker = ticker_map.get(sym_clean, f"{sym_clean}.NS" if not sym_clean.endswith(".NS") else sym_clean)
-            df = yf.download(yf_ticker, start=from_date, end=to_date, progress=False)
-            if not df.empty:
-                # Handle possible multi-index columns from yf
-                if hasattr(df.columns, 'levels'):
-                    df.columns = [c[0] if isinstance(c, tuple) else c for c in df.columns]
-                for dt, row in df.iterrows():
-                    candles.append({
-                        "timestamp": dt.strftime("%Y-%m-%d"),
-                        "open": round(float(row["Open"]), 2),
-                        "high": round(float(row["High"]), 2),
-                        "low": round(float(row["Low"]), 2),
-                        "close": round(float(row["Close"]), 2),
-                        "volume": float(row["Volume"]),
-                    })
-        except Exception as e:
-            logger.warning(f"yfinance candle fallback failed for {instrument_key}: {e}")
+    # 1. Try YFinance provider directly
+    candles = await yf_provider.get_historical_candles(
+        instrument_key,
+        interval=norm_interval,
+        from_date=from_date,
+        to_date=to_date,
+        period=period,
+    )
+
+    # 2. Upstox fallback if empty
+    if not candles and from_date and to_date:
+        candles = await upstox_provider.get_historical_candles(instrument_key, "day", from_date, to_date)
 
     if include_technicals and candles:
         candles = sorted(candles, key=lambda x: x["timestamp"])
         candles = TechnicalAnalysisEngine.analyze(candles)
 
-    return {"data": candles}
+    return {"data": candles, "count": len(candles)}
+
+
+@router.get("/stocks/{instrument_key}/forecast/prophet")
+async def get_stock_prophet_forecast(
+    instrument_key: str,
+    horizon_days: int = Query(30, ge=3, le=180),
+    period: str = Query("1y"),
+    current_user: Optional[User] = Depends(get_optional_current_user)
+):
+    """Generate genuine Facebook Prophet trend forecast with confidence bands and test metrics."""
+    df = yf_provider.fetch_stock_dataframe(instrument_key, period=period)
+    if df.empty:
+        raise HTTPException(status_code=404, detail=f"No historical data found for {instrument_key}")
+
+    res = ProphetService.forecast(df, horizon_days=horizon_days, evaluate_holdout=True)
+    if res.get("status") == "error":
+        raise HTTPException(status_code=400, detail=res.get("message", "Prophet forecasting failed"))
+
+    return res
+
+
+@router.get("/stocks/{instrument_key}/forecast/lstm")
+async def get_stock_lstm_forecast(
+    instrument_key: str,
+    horizon_days: int = Query(14, ge=3, le=60),
+    seq_length: int = Query(15, ge=5, le=30),
+    period: str = Query("1y"),
+    current_user: Optional[User] = Depends(get_optional_current_user)
+):
+    """Generate genuine TensorFlow/Keras LSTM sequential forecast with hold-out MAE and RMSE."""
+    df = yf_provider.fetch_stock_dataframe(instrument_key, period=period)
+    if df.empty:
+        raise HTTPException(status_code=404, detail=f"No historical data found for {instrument_key}")
+
+    res = LSTMService.forecast(
+        df,
+        seq_length=seq_length,
+        horizon_days=horizon_days,
+        epochs=20,
+        batch_size=16,
+    )
+    if res.get("status") == "error":
+        raise HTTPException(status_code=400, detail=res.get("message", "LSTM forecasting failed"))
+
+    return res
+
+
+@router.get("/stocks/{instrument_key}/analytics")
+async def get_stock_analytics(
+    instrument_key: str,
+    timeframe: str = Query("6M", description="1M, 3M, 6M, 1Y"),
+    current_user: Optional[User] = Depends(get_optional_current_user)
+):
+    """Unified FinPulse analytics endpoint: quote, technical indicators, Prophet and LSTM forecasts."""
+    period_map = {"1M": "1mo", "3M": "3mo", "6M": "6mo", "1Y": "1y"}
+    period = period_map.get(timeframe.upper(), "6mo")
+
+    # Fetch live quote
+    quote_data = await yf_provider.get_market_quote(instrument_key)
+    if not quote_data:
+        # Fallback to catalog or mock
+        quote_data = {
+            "symbol": instrument_key.split("|")[-1],
+            "price": 0.0,
+            "ltp": 0.0,
+            "change": 0.0,
+            "change_percent": 0.0,
+            "high": 0.0,
+            "low": 0.0,
+            "volume": 0,
+            "is_up": True,
+        }
+
+    # Fetch historical dataframe
+    df = yf_provider.fetch_stock_dataframe(instrument_key, period=period)
+    candles: List[Dict[str, Any]] = []
+
+    if not df.empty:
+        for _, row in df.iterrows():
+            ts_str = str(row["timestamp"])[:10]
+            candles.append({
+                "timestamp": ts_str,
+                "open": round(float(row["open"]), 2),
+                "high": round(float(row["high"]), 2),
+                "low": round(float(row["low"]), 2),
+                "close": round(float(row["close"]), 2),
+                "volume": int(row["volume"]),
+            })
+        candles = TechnicalAnalysisEngine.analyze(candles)
+
+    # Compute forecasts if enough data exists
+    prophet_res: Optional[Dict[str, Any]] = None
+    lstm_res: Optional[Dict[str, Any]] = None
+
+    if len(df) >= 25:
+        try:
+            prophet_res = ProphetService.forecast(df, horizon_days=30, evaluate_holdout=True)
+        except Exception as pe:
+            logger.warning(f"Prophet forecast calculation error: {pe}")
+
+    if len(df) >= 40:
+        try:
+            lstm_res = LSTMService.forecast(df, seq_length=15, horizon_days=14, epochs=15)
+        except Exception as le:
+            logger.warning(f"LSTM forecast calculation error: {le}")
+
+    return {
+        "symbol": instrument_key,
+        "timeframe": timeframe,
+        "quote": quote_data,
+        "candles": candles,
+        "indicators_summary": {
+            "has_sma": True,
+            "has_ema": True,
+            "has_rsi": True,
+            "has_macd": True,
+        },
+        "prophet_forecast": prophet_res if prophet_res and prophet_res.get("status") == "success" else None,
+        "lstm_forecast": lstm_res if lstm_res and lstm_res.get("status") == "success" else None,
+    }
+
