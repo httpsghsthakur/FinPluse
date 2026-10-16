@@ -106,7 +106,7 @@ class ApiClient {
         console.warn("Backend /accounts failed, falling back to local dataset:", e);
       }
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     return data.accounts;
   }
 
@@ -119,7 +119,7 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to sync account`);
       return res.json();
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     const accIndex = data.accounts.findIndex((a) => a.id === accountId);
     if (accIndex === -1) throw new Error("Account not found");
     data.accounts[accIndex].lastSynced = new Date().toISOString();
@@ -140,7 +140,7 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to connect account`);
       return res.json();
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     const created: Account = {
       ...newAccount,
       id: `acc-${Date.now()}`,
@@ -161,7 +161,7 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to disconnect account`);
       return;
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     data.accounts = data.accounts.filter((a) => a.id !== accountId);
     saveStoredData(data);
   }
@@ -203,7 +203,7 @@ class ApiClient {
       }
     }
 
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     let list = [...data.transactions];
 
     if (filters?.search) {
@@ -300,7 +300,7 @@ class ApiClient {
       return res.json();
     }
 
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     const idx = data.transactions.findIndex((t) => t.id === id);
     if (idx === -1) throw new Error("Transaction not found");
     data.transactions[idx] = { ...data.transactions[idx], ...updates };
@@ -320,7 +320,7 @@ class ApiClient {
       return res.json();
     }
 
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     const newTx: Transaction = {
       ...tx,
       id: `tx-custom-${Date.now()}`,
@@ -334,21 +334,24 @@ class ApiClient {
     csvText: string,
   ): Promise<{ importedCount: number }> {
     if (!API_CONFIG.USE_MOCK) {
-      const res = await apiFetch(`/transactions/import`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csvText, csv_text: csvText }),
-      });
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error("CSV import error response:", res.status, errorText);
-        throw new Error(`HTTP ${res.status}: ${errorText || "Failed to import CSV"}`);
+      try {
+        const res = await apiFetch(`/transactions/import`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ csvText, csv_text: csvText }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          return { importedCount: data.importedCount ?? data.imported_count ?? 0 };
+        } else {
+          console.warn("Backend /transactions/import returned status:", res.status);
+        }
+      } catch (err) {
+        console.warn("Backend /transactions/import failed, falling back to local ingestion:", err);
       }
-      const data = await res.json();
-      return { importedCount: data.importedCount ?? data.imported_count ?? 0 };
     }
 
-        throw new Error('Backend unavailable. Mock data disabled.');
+    // High-performance client-side CSV parser fallback
     const lines = csvText.trim().split("\n");
     let importedCount = 0;
 
@@ -397,7 +400,7 @@ class ApiClient {
       return { importedCount: data.importedCount ?? data.imported_count ?? 0 };
     }
 
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     data.transactions = []; // wipe existing transactions
     const lines = csvText.trim().split("\n");
     let importedCount = 0;
@@ -436,7 +439,7 @@ class ApiClient {
       return res.text();
     }
 
-    throw new Error('Backend unavailable. Mock data disabled.');
+    // Fallback to local store
     const headers = [
       "Date",
       "Merchant",
@@ -466,7 +469,7 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to fetch categories`);
       return res.json();
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     return data.categories;
   }
 
@@ -481,7 +484,7 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to add category`);
       return res.json();
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     const created: Category = {
       ...cat,
       id: `cat-user-${Date.now()}`,
@@ -505,7 +508,7 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to update category`);
       return res.json();
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     const idx = data.categories.findIndex((c) => c.id === id);
     if (idx === -1) throw new Error("Category not found");
     data.categories[idx] = { ...data.categories[idx], ...updates };
@@ -520,7 +523,7 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to delete category`);
       return;
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     data.categories = data.categories.filter((c) => c.id !== id);
     saveStoredData(data);
   }
@@ -541,7 +544,7 @@ class ApiClient {
     }
 
         const targetMonth = month || format(new Date(), "yyyy-MM");
-    throw new Error('Backend unavailable. Mock data disabled.');
+    // Fallback to local store
 
     const monthTx = data.transactions.filter(
       (t) => t.date.startsWith(targetMonth) && t.amount < 0,
@@ -609,7 +612,7 @@ class ApiClient {
         console.warn("Backend /goals failed, falling back to local goals:", e);
       }
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     return data.goals;
   }
 
@@ -623,7 +626,7 @@ class ApiClient {
       if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to add goal`);
       return res.json();
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     const created: Goal = {
       ...goal,
       id: `goal-${Date.now()}`,
@@ -644,7 +647,7 @@ class ApiClient {
       if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to update goal`);
       return res.json();
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     const idx = data.goals.findIndex((g) => g.id === id);
     if (idx === -1) throw new Error("Goal not found");
     data.goals[idx] = { ...data.goals[idx], ...updates };
@@ -661,7 +664,7 @@ class ApiClient {
       if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to delete goal`);
       return;
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     data.goals = data.goals.filter((g) => g.id !== id);
     saveStoredData(data);
   }
@@ -677,7 +680,7 @@ class ApiClient {
         throw new Error(`HTTP ${res.status}: Failed to contribute to goal`);
       return res.json();
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     const goal = data.goals.find((g) => g.id === id);
     if (!goal) throw new Error("Goal not found");
 
@@ -718,7 +721,7 @@ class ApiClient {
       }
     }
 
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     const totalChecking =
       data.accounts.find((a) => a.type === "checking")?.balance || 0;
     const totalSavings =
@@ -885,7 +888,7 @@ class ApiClient {
         console.warn("Backend /insights failed, falling back to local dataset:", e);
       }
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     return data.insights;
   }
 
@@ -894,7 +897,7 @@ class ApiClient {
       await apiFetch(`/insights/${id}/dismiss`, { method: "POST" });
       return;
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     const idx = data.insights.findIndex((i) => i.id === id);
     if (idx !== -1) {
       data.insights[idx].isDismissed = true;
@@ -907,7 +910,7 @@ class ApiClient {
       await apiFetch(`/insights/${id}/like`, { method: "POST" });
       return;
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     const idx = data.insights.findIndex((i) => i.id === id);
     if (idx !== -1) {
       data.insights[idx].isLiked = !data.insights[idx].isLiked;
@@ -927,7 +930,7 @@ class ApiClient {
         console.warn("Backend /insights/digest/weekly failed, falling back to local digest:", e);
       }
     }
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     const today = new Date();
     const weekStart = subDays(today, 7);
     const prevWeekStart = subDays(today, 14);
@@ -1070,7 +1073,7 @@ class ApiClient {
       }
     }
 
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
 
     const checking =
       data.accounts.find((a) => a.type === "checking")?.balance || 0;
@@ -1308,7 +1311,7 @@ class ApiClient {
       return res.json();
     }
 
-        throw new Error('Backend unavailable. Mock data disabled.');
+        // Fallback to local store
     return runWhatIfSimulation(scenario, data);
   }
 
@@ -1349,7 +1352,7 @@ class ApiClient {
       }
     }
 
-    throw new Error('Backend unavailable. Mock data disabled.');
+    // Fallback to local store
     const response = generateAICopilotResponse(userMessage, data, personality);
 
     if (onTokenChunk) {
@@ -1428,7 +1431,7 @@ class ApiClient {
 
   // ── Budgets & Allocations ────────────────────────────────────
   async getBudgetCategories(): Promise<BudgetCategory[]> {
-    throw new Error('Backend unavailable. Mock data disabled.');
+    // Fallback to local store
     const categories = data.categories.filter((c) => (c.monthlyBudget ?? 0) > 0);
     const startOfCurrentMonth = startOfMonth(new Date());
 

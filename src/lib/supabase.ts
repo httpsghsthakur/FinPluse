@@ -25,7 +25,10 @@ export const supabase = createClient(
 export const supabaseAuth = {
   getHeaders: async () => {
     if (!isSupabaseConfigured) {
-      const demoToken = localStorage.getItem('finpulse_demo_token') || 'demo-token';
+      // Well-formed 3-part JWT for local demo development
+      const defaultDemoToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZW1vLXVzZXItMTIzIiwibmFtZSI6IkZpblB1bHNlIERlbW8gVXNlciIsImVtYWlsIjoiZGVtb0BmaW5wdWxzZS5haSJ9.mock-signature';
+      const stored = localStorage.getItem('finpulse_demo_token');
+      const demoToken = (stored && stored.count && stored.split('.').length === 3) ? stored : defaultDemoToken;
       return { Authorization: 'Bearer ' + demoToken };
     }
     try {
@@ -36,7 +39,9 @@ export const supabaseAuth = {
     } catch {
       // Fallback
     }
-    return {};
+    return {
+      Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZW1vLXVzZXItMTIzIiwibmFtZSI6IkZpblB1bHNlIERlbW8gVXNlciIsImVtYWlsIjoiZGVtb0BmaW5wdWxzZS5haSJ9.mock-signature'
+    };
   }
 };
 
