@@ -1,4 +1,4 @@
-﻿"""
+"""
 FinPilot Backend â€” Main Application Entry Point
 
 FastAPI application with lifespan management for database initialization.
@@ -127,10 +127,14 @@ if DIST_DIR.exists() and (DIST_DIR / "index.html").exists():
     # Serve SPA index.html for all client-side routes
     @app.get("/{full_path:path}", include_in_schema=False)
     async def serve_spa(full_path: str):
+        if full_path.startswith("api/"):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail=f"API endpoint not found: /{full_path}")
         file_path = DIST_DIR / full_path
         if full_path and file_path.exists() and file_path.is_file():
             return FileResponse(str(file_path))
         return FileResponse(str(DIST_DIR / "index.html"))
+
 else:
     @app.get("/", tags=["Health"])
     async def root():
